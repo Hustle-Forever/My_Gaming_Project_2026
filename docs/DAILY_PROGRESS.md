@@ -8,6 +8,7 @@
 
 ## 2026-08-10
 
+- **Original showcase restored** — the real `M2_Showcase.html` appeared in the project root (it wasn't on disk during the earlier search) and was moved to `docs/index.html`, replacing the generated stand-in. Why: the user's own showcase is the canonical front door; moved verbatim, render-verified. Note for later: its docs cards are not yet hyperlinked to the `.md` files.
 - **Docs system created** — `docs/` with GOAL / ENGINEERING / DATABASE / SECURITY / FRONTEND / UIUX / AUTH / DAILY_PROGRESS, each seeded with the current state of its area, plus the showcase page at `docs/index.html`. Why: single place for project truth, and the standing docs-discipline rule starts today. Note: `M2_Showcase.html` was not found anywhere on the machine, so `docs/index.html` was **generated fresh** in the Mirsal design language as a stand-in — replace it with the original if it turns up.
 - **GitHub prep** — fresh git repo rooted at the project (separate from the Desktop-wide repo), first commit `a7de38c` (52 files, no secrets — verified). `.gitignore` hardened with `*firebase-adminsdk*.json` / `service-account*.json` patterns. Why: pushing to a new private repo `Hustle-Forever/My_Gaming_Project_2026`; push itself is pending the owner's GitHub token.
 - **Firebase wired to the real project** — the public `m2-gaming` web config went into `app/firebase-config.js` (`useEmulator:false`). Why: the deployed frontend must talk to the customer-facing Firebase project.
