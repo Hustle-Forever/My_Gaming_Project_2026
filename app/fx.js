@@ -243,6 +243,8 @@
     const hueShift = Number(opts.hueShift) || 0;
     const attack = opts.attack !== undefined ? opts.attack : 0.35;
     const release = opts.release !== undefined ? opts.release : 0.08;
+    // timeScale < 1 slows ALL shader motion (noise morph, wobble, highlight)
+    const timeScale = opts.timeScale !== undefined ? opts.timeScale : 1;
     let background = hexToRgb(opts.background || '#000000');
     const eventTarget = opts.eventTarget || container;
 
@@ -279,9 +281,9 @@
       const effective = Math.max(targetHover, Math.min(1, levelSm));
       hoverVal += (effective - hoverVal) * 0.1;
       // speech makes it turn gently, faster the louder you are
-      if (rotateOnHover && effective > 0.15) rot += dt * (0.25 + effective * 0.5);
+      if (rotateOnHover && effective > 0.15) rot += dt * (0.18 + effective * 0.35);
       gl.useProgram(P.prog);
-      P.f('iTime', t * 0.001);
+      P.f('iTime', t * 0.001 * timeScale);
       P.v3('iResolution', res);
       P.f('hue', hue + hueShift * hoverVal);
       P.f('hover', hoverVal);

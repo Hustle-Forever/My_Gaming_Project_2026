@@ -301,7 +301,7 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 .lis .orb-wrap{width:160px;height:160px}
 .lis .orb-halo{opacity:1}.lis .orb-ring{opacity:.5}
 .wave{display:flex;align-items:center;gap:4px;height:44px}
-.wave i{width:4px;height:4px;border-radius:99px;background:var(--lime);opacity:.55;transition:height .07s linear,opacity .07s linear}
+.wave i{width:4px;height:4px;border-radius:99px;background:var(--lime);opacity:.55;transition:height .22s ease-out,opacity .22s ease-out}
 .ltxt{font-size:16px;color:var(--dim);text-align:center;min-height:24px}
 .ltxt.has{color:var(--text);font-size:18px;font-weight:500;max-width:320px}
 .lstop{display:flex;align-items:center;gap:9px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);
@@ -649,6 +649,7 @@ const MOON='<svg viewBox="0 0 24 24" fill="none"><path d="M20 14a8 8 0 01-10-10 
 
 const NB=26;(function(){let h="";for(let i=0;i<NB;i++)h+="<i></i>";$("wave").innerHTML=h;})();
 const bars=[...document.querySelectorAll("#wave i")];
+const barLv=new Array(NB).fill(0); // temporally smoothed per-bar levels
 
 function themeBg(){return THEME==="dark"?"#0A0B0E":"#F4F5F2";}
 function setTheme(x){THEME=x;document.documentElement.dataset.theme=x;$("thBtn").innerHTML=x==="dark"?MOON:SUN;
@@ -868,16 +869,18 @@ function anim(){if(!lis||!an)return;
  const halo=$("halo"),ring=$("ring"); // only exist in the CSS fallback (no WebGL)
  if(halo){halo.style.opacity=(.25+lv*.75).toFixed(2);halo.style.transform="scale("+(.92+lv*.3).toFixed(3)+")";}
  if(ring){ring.style.opacity=(.15+lv*.6).toFixed(2);ring.style.transform="scale("+(1+lv*.22).toFixed(3)+")";}
- // symmetric center-out spectrum: voice energy blooms from the middle,
- // tapering toward the edges
+ // symmetric center-out spectrum, temporally smoothed: bars glide toward
+ // their targets (quick-ish rise, lazy fall) instead of snapping per frame
  const half=NB/2,span=Math.max(1,Math.floor((da.length*.55)/half));
  for(let i=0;i<NB;i++){
   const d=Math.abs(i+.5-half)/half;
   const bin=Math.floor(d*da.length*.55);
   let v=0;for(let j=0;j<span;j++)v+=da[Math.min(da.length-1,bin+j)];
   v=v/span/255;
-  bars[i].style.height=Math.max(4,Math.min(42,4+v*52*(1-d*.45)))+"px";
-  bars[i].style.opacity=(.35+v*.65).toFixed(2);
+  barLv[i]+=(v-barLv[i])*(v>barLv[i]?.22:.1);
+  const s=barLv[i];
+  bars[i].style.height=Math.max(4,Math.min(42,4+s*52*(1-d*.45)))+"px";
+  bars[i].style.opacity=(.35+s*.65).toFixed(2);
  }
  raf=requestAnimationFrame(anim);}
 function stopMic(){lis=false;try{rec&&rec.stop();}catch(e){}
@@ -907,8 +910,8 @@ function initFX(){
      backdrop; dark composites to true transparency in both themes. */
   const lw=$("lisOrb");
   if(lw){lw.innerHTML="";const c=document.createElement("div");c.style.cssText="position:absolute;inset:0";
-   lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.32,hueShift:24,attack:.3,release:.06,
-    rotateOnHover:true,background:"#0A0B0E"});}
+   lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.32,hueShift:24,attack:.22,release:.045,
+    timeScale:.75,rotateOnHover:true,background:"#0A0B0E"});}
  }catch(e){console.warn("fx init failed:",e);}
 }
 
