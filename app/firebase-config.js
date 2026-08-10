@@ -11,5 +11,5 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "592340578301",
   appId: "1:592340578301:web:19b1b23579e6189ddbb394",
   measurementId: "G-JVYEH96MY6",
-  useEmulator: true,
+  useEmulator: false,
 };
