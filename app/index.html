@@ -108,23 +108,71 @@ h2{font-family:var(--display);font-size:30px;font-weight:600;letter-spacing:-.6p
 .f h3{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:6px}
 .f p{font-size:14px;color:var(--dim)}
 
-/* demo phone */
+/* demo phone — realistic device mockup (scoped under .mockup so its dock/
+   mic/typing classes can never collide with the live console's) */
 .demo{display:grid;grid-template-columns:1fr;gap:30px;align-items:center}
 @media (min-width:860px){.demo{grid-template-columns:1fr 340px}}
-.phone{width:300px;max-width:100%;margin:0 auto;border:1px solid var(--line-2);border-radius:28px;background:var(--bg-2);
- padding:14px;box-shadow:0 30px 70px rgba(0,0,0,.5)}
-.ph-top{display:flex;align-items:center;gap:8px;padding-bottom:11px;border-bottom:1px solid var(--line);margin-bottom:12px}
-.ph-top .mk{width:24px;height:24px;border-radius:7px}.ph-top .mk span{font-size:9px}
-.ph-top b{font-size:13px}
-.ph-top .st{margin-inline-start:auto;font-size:10px;color:var(--lime);border:1px solid var(--line);border-radius:99px;padding:3px 8px}
-.bub{max-width:85%;padding:9px 12px;border-radius:14px;font-size:13px;margin-bottom:8px;opacity:0;animation:pop .45s ease forwards}
-.bub.u{margin-inline-start:auto;background:var(--lime);color:var(--lime-ink);font-weight:500;border-bottom-right-radius:5px}
-.bub.b{background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:5px}
-.bub .bd{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--lime);background:var(--lime-soft);padding:2px 7px;border-radius:99px;display:inline-block;margin-bottom:5px}
-.bub .ok{font-size:10.5px;color:var(--dim);margin-top:6px;display:flex;align-items:center;gap:5px}
-.bub .ok i{width:5px;height:5px;border-radius:50%;background:var(--lime);display:block}
 @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.d1{animation-delay:.2s}.d2{animation-delay:1.1s}.d3{animation-delay:2.1s}.d4{animation-delay:3s}
+.mockup{position:relative;display:grid;place-items:center;padding:20px}
+.mockup::before{content:"";position:absolute;width:340px;height:340px;max-width:88vw;border-radius:50%;
+ background:radial-gradient(circle,rgba(169,139,251,.22),transparent 65%);filter:blur(50px);z-index:0}
+.device{position:relative;z-index:1;width:290px;max-width:100%;height:600px;border-radius:44px;padding:11px;
+ background:linear-gradient(160deg,#3a3f4a 0%,#14171d 22%,#0d1015 55%,#2b3038 100%);
+ box-shadow:0 2px 3px rgba(255,255,255,.10) inset,0 -2px 3px rgba(0,0,0,.6) inset,
+  0 40px 80px -20px rgba(0,0,0,.75),0 18px 36px -12px rgba(0,0,0,.5)}
+.device .btn-side{position:absolute;left:-2px;width:3px;border-radius:3px;background:linear-gradient(180deg,#2c313a,#171a20)}
+.device .b1{top:120px;height:28px}.device .b2{top:166px;height:48px}.device .b3{top:226px;height:48px}
+.device .btn-pw{position:absolute;right:-2px;top:170px;width:3px;height:64px;border-radius:3px;background:linear-gradient(180deg,#2c313a,#171a20)}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;
+ background:linear-gradient(180deg,var(--bg-2),var(--bg) 45%)}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:6;
+ background:linear-gradient(115deg,rgba(255,255,255,.07) 0%,transparent 32%,transparent 70%,rgba(255,255,255,.03) 100%)}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:82px;height:23px;border-radius:99px;
+ background:#000;z-index:5;display:flex;align-items:center;justify-content:flex-end;padding-right:8px}
+.island i{width:6px;height:6px;border-radius:50%;background:#1c2530;box-shadow:inset 0 0 2px rgba(120,180,255,.5)}
+.sbar{display:flex;align-items:center;padding:12px 20px 6px;font-size:11px;font-weight:600;color:var(--text);z-index:4}
+.sbar .time{letter-spacing:.2px}
+.sbar .icons{margin-left:auto;display:flex;gap:5px;align-items:center;opacity:.9}
+.sbar svg{width:14px;height:11px}
+.ahead{display:flex;align-items:center;gap:8px;padding:8px 14px 11px;border-bottom:1px solid var(--line)}
+.mockup .mk{width:26px;height:26px;border-radius:8px}
+.mockup .mk::after{inset:2.5px;border-radius:6px;background:var(--bg-2)}
+.mockup .mk span{font-size:9.5px}
+.ahead .nm{display:flex;flex-direction:column;line-height:1.15}
+.ahead .nm b{font-size:12.5px;font-family:var(--display)}
+.ahead .nm span{font-size:9px;color:var(--faint)}
+.conn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;color:var(--lime);
+ border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 8px}
+.conn i{width:5px;height:5px;border-radius:50%;background:var(--lime);box-shadow:0 0 6px var(--lime);animation:bp 2s infinite}
+@keyframes bp{0%,100%{opacity:1}50%{opacity:.45}}
+.chat{flex:1;padding:14px 13px;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.bub{max-width:82%;padding:9px 12px;border-radius:15px;font-size:12.5px;line-height:1.45;opacity:0;
+ animation:pop .5s cubic-bezier(.2,.8,.3,1) forwards}
+.bub.u{align-self:flex-end;background:var(--lime);color:var(--lime-ink);font-weight:500;border-bottom-right-radius:5px;
+ box-shadow:0 4px 14px rgba(196,240,66,.16)}
+.bub.u.ar{direction:rtl;border-bottom-right-radius:15px;border-bottom-left-radius:5px}
+.bub.b{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:5px}
+.bub.b.ar{direction:rtl;border-bottom-left-radius:15px;border-bottom-right-radius:5px}
+.mbd{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+ padding:2.5px 7px;border-radius:99px;margin-bottom:6px}
+.mbd.l{background:var(--lime-soft);color:var(--lime)}
+.mbd.v{background:var(--violet-soft);color:var(--violet)}
+.bub .ok{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--dim);margin-top:7px}
+.bub .ok i{width:4.5px;height:4.5px;border-radius:50%;background:var(--lime);flex:0 0 auto}
+.bub .ok.ar{flex-direction:row-reverse}
+.mockup .typ{align-self:flex-start;display:flex;gap:4px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--line);
+ border-radius:15px;border-bottom-left-radius:5px;opacity:0;animation:flash .95s ease forwards}
+.mockup .typ i{width:5px;height:5px}
+.mockup .t1{animation-delay:.75s}.mockup .t2{animation-delay:2.85s}
+@keyframes flash{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;height:0;padding:0;margin:0;border:0}}
+.d1{animation-delay:.3s}.d2{animation-delay:1.25s}.d3{animation-delay:2.4s}.d4{animation-delay:3.35s}
+.mockup .dock{padding:9px 12px 8px;border-top:1px solid var(--line)}
+.mockup .din{gap:7px;border-radius:14px;padding:4px;padding-inline-start:12px}
+.mockup .din .ph{flex:1;font-size:11.5px;color:var(--faint)}
+.mockup .mic,.mockup .snd{width:31px;height:31px;border-radius:10px;cursor:default}
+.mockup .mic{border:0;background:var(--surface-3)}
+.mockup .mic svg,.mockup .snd svg{width:14px;height:14px}
+.hbar{width:100px;height:4px;border-radius:99px;background:var(--line-2);margin:6px auto 8px}
 
 /* pricing */
 .pgrid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:26px}
@@ -340,12 +388,42 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
         <button class="btn btn-p btn-lg" onclick="openAuth('signup')">Try it free</button>
       </div>
     </div>
-    <div class="phone reveal">
-      <div class="ph-top"><span class="mk"><span>M2</span></span><b>M2</b><span class="st">● Connected</span></div>
-      <div class="bub u d1">ابغى سيارة شرطة</div>
-      <div class="bub b d2"><span class="bd">Vehicle</span><div>تم — سيارة شرطة في الطريق</div><div class="ok"><i></i>Sent to server</div></div>
-      <div class="bub u d3">make it rain</div>
-      <div class="bub b d4"><span class="bd">Weather</span><div>Weather updated in-game.</div><div class="ok"><i></i>Sent to server</div></div>
+    <div class="mockup reveal">
+      <div class="device">
+        <span class="btn-side b1"></span><span class="btn-side b2"></span><span class="btn-side b3"></span><span class="btn-pw"></span>
+        <div class="screen">
+          <div class="island"><i></i></div>
+          <div class="sbar">
+            <span class="time">9:41</span>
+            <span class="icons">
+              <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="6" width="3" height="6" rx="1"/><rect x="9" y="3.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="1" width="3" height="11" rx="1"/></svg>
+              <svg viewBox="0 0 16 12" fill="none"><path d="M1 4.2a10 10 0 0114 0M3.4 6.8a6.6 6.6 0 019.2 0M6 9.4a3 3 0 014 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 24 12" fill="none"><rect x="1" y="1.5" width="19" height="9" rx="2.5" stroke="currentColor" stroke-width="1.3" opacity=".5"/><rect x="2.8" y="3.3" width="13" height="5.4" rx="1.3" fill="currentColor"/><path d="M21.5 4.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></svg>
+            </span>
+          </div>
+          <div class="ahead">
+            <span class="mk"><span>M2</span></span>
+            <span class="nm"><b>M2</b><span>Aziz Drift RP</span></span>
+            <span class="conn"><i></i>Connected</span>
+          </div>
+          <div class="chat">
+            <div class="bub u ar d1">ابغى سيارة شرطة</div>
+            <div class="typ t1"><i></i><i></i><i></i></div>
+            <div class="bub b ar d2"><span class="mbd l">مركبة</span><div>تم — سيارة شرطة في الطريق</div><div class="ok ar"><i></i>أُرسل للسيرفر</div></div>
+            <div class="bub u d3">make it rain</div>
+            <div class="typ t2"><i></i><i></i><i></i></div>
+            <div class="bub b d4"><span class="mbd v">Weather</span><div>Weather updated in-game.</div><div class="ok"><i></i>Sent to server</div></div>
+          </div>
+          <div class="dock">
+            <div class="din">
+              <span class="ph">Type a command…</span>
+              <span class="mic"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M6 11a6 6 0 0012 0M12 17v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+              <span class="snd"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+            </div>
+            <div class="hbar"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>

@@ -43,6 +43,7 @@ Appears: site hero (112px), auth screens (78px), console hero (104→44px when c
 - **Action badges** — every bot reply opens with a color-coded badge (Vehicle lime / Weather violet / Time pink / …) so outcomes scan at a glance.
 - **Status chips** (`.chip2`) — one line under replies: sent-to-server (lime) / didn't-catch (dim) / couldn't-reach + rate-limited (amber) / expired + inactive + error (red). Specific, never generic.
 - **Setup checklist** (dashboard hero) — numbered circles flip to lime ✓, done rows get a strikethrough, the next step pulses (`pu` keyframe), gradient progress bar (teal→lime) animates width; each row deep-links to its card with a 1.2s lime ring flash.
+- **Device mockup** (site demo section) — realistic phone frame: gradient metal body with side/power buttons, dynamic island, status bar (9:41 / signal / wifi / battery), app header with Connected pill, animated AR+EN chat with flash-through typing indicators, input dock and home bar. Hardware stays dark in both themes; the screen follows the tokens. All classes scoped under `.mockup` so they can never collide with the live console's dock/mic/typing styles.
 - **Notices** (console) — inline card, 3px lime start-border, title + body + dashboard link + ✕ dismiss. Used for "no AI key" and "server not connected". Never a toast, never blocking.
 - **Confirm steps** — inline red-bordered block that swaps into the layout (rotate token). Native `confirm()`/`alert()` are banned.
 - **Token box** — mono, masked `brg_••••…last4` with reveal-eye and copy; copy buttons flash a ✓ for 1.4s.
