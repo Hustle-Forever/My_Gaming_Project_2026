@@ -8,7 +8,6 @@ const { startServer, stopServer, BASE, json, freshTenant, api, adminLibs, sleep 
 test.before(async () => { await startServer(); });
 test.after(async () => { await stopServer(); });
 
-const poll = (tok) => json(fetchPoll(tok));
 async function fetchPoll(tok) { return fetch(`${BASE}/api/bridge/poll`, { headers: { 'x-bridge-token': tok } }); }
 
 test('enqueue -> poll delivers once (inflight) -> ack deletes', async () => {

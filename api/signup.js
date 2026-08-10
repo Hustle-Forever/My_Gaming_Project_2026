@@ -22,7 +22,14 @@ module.exports = endpoint(['POST'], async (req, res, { log }) => {
     // Open access: new accounts are active immediately — no payment required.
     // The `active` flag + 402 pay-gate remain in the code as the dormant Stripe
     // seam; flip this back to `active:false` (or let Stripe set it) to charge.
-    await createTenant(user.uid, { name, active: true });
+    try {
+      await createTenant(user.uid, { name, active: true });
+    } catch (tenantErr) {
+      // Roll back the auth user, or the email is orphaned forever:
+      // registered in Auth (409 on retry) with no tenant doc (404 everywhere).
+      await auth.deleteUser(user.uid).catch(() => {});
+      throw tenantErr;
+    }
     log('log', { msg: 'tenant created', uid: user.uid, active: true });
     return res.status(200).json({ ok: true, uid: user.uid });
   } catch (err) {

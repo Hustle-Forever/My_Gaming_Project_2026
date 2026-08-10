@@ -35,8 +35,8 @@ async function startServer(extraEnv = {}) {
       ...process.env,
       PORT: String(PORT),
       NODE_ENV: 'test',
-      // small window so the rate-limit test doesn't need 30 requests
-      RATE_LIMIT_PER_MIN: process.env.RATE_LIMIT_PER_MIN || '30',
+      // ratelimit.test.js passes a small RATE_LIMIT_PER_MIN via extraEnv;
+      // everything else runs on the API's default.
       ...extraEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],

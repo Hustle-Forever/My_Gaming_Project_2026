@@ -84,17 +84,22 @@ function sendFile(res, file) {
 function serveStatic(res, pathname) {
   // /docs and /docs/* come from the repo's docs/ directory (like Vercel's
   // root static serving); everything else from app/.
+  // Containment: resolve, then require the result to sit INSIDE the base dir
+  // (base + separator — a bare prefix check would let /docs/../docs-evil pass).
+  const contained = (base, rel) => {
+    const file = path.resolve(base, rel.replace(/^([/\\])+/, ''));
+    return file === base || file.startsWith(base + path.sep) ? file : null;
+  };
   if (pathname === '/docs' || pathname === '/docs/') pathname = '/docs/index.html';
   if (pathname.startsWith('/docs/')) {
-    const file = path.join(DOCS_DIR, path.normalize(pathname.slice('/docs/'.length)).replace(/^([/\\])+/, ''));
-    if (file.startsWith(DOCS_DIR) && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(res, file);
+    const file = contained(DOCS_DIR, pathname.slice('/docs/'.length));
+    if (file && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(res, file);
     staticHeaders(res, false);
     return res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
   }
   const rewrites = { '/': '/index.html', '/dashboard': '/dashboard.html' };
-  const rel = rewrites[pathname] || pathname;
-  const file = path.join(APP_DIR, path.normalize(rel).replace(/^([/\\])+/, ''));
-  if (!file.startsWith(APP_DIR) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+  const file = contained(APP_DIR, rewrites[pathname] || pathname);
+  if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
     staticHeaders(res, false);
     res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
     return;

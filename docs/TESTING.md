@@ -2,14 +2,14 @@
 
 **Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-10
 
-> One command — `npm test` — boots the Firebase emulators, runs 44 integration tests over real HTTP against the real handlers, and tears everything down. No mocks of our own code: tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators, runs 45 integration tests over real HTTP against the real handlers, and tears everything down. No mocks of our own code: tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 44 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 45 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```

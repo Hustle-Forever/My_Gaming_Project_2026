@@ -5,7 +5,7 @@
 // the bridge. First successful queue stamps firstCommandAt (setup checklist).
 const actions = require('../backend/actions');
 const { requireUser } = require('../lib/auth');
-const { getTenant, enqueueCommand, allowCommand, updateTenant } = require('../lib/firestore');
+const { getTenantAndCountCommand, enqueueCommand, updateTenant } = require('../lib/firestore');
 const { decryptSecret } = require('../lib/crypto');
 const providers = require('../providers');
 const { endpoint, readJson, sendErr } = require('../lib/http');
@@ -16,21 +16,23 @@ module.exports = endpoint(['POST'], async (req, res, { log }) => {
   const user = await requireUser(req);
   if (!user) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid or missing ID token');
 
-  const tenant = await getTenant(user.uid);
+  // One transactional read serves the tenant lookup AND the rate-limit count.
+  // Math.max + ||30 guard: a typo'd env value (NaN/0/negative) must fall back
+  // to the default, never silently disable limiting.
+  const limit = Math.max(1, Number(process.env.RATE_LIMIT_PER_MIN) || 30);
+  const { tenant, allowed } = await getTenantAndCountCommand(user.uid, limit);
   if (!tenant) return sendErr(res, 404, 'NOT_FOUND', 'no tenant for this account');
   if (!tenant.active) return sendErr(res, 402, 'PLAN_INACTIVE', 'subscription inactive');
+  if (!allowed) {
+    log('log', { msg: 'rate limited', uid: tenant.id });
+    return sendErr(res, 429, 'RATE_LIMITED', `rate limit exceeded - max ${limit} commands per minute`);
+  }
 
   const body = await readJson(req);
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   const mode = body.mode === 'ask' ? 'ask' : 'run';
   if (!text || text.length > MAX_TEXT) {
     return sendErr(res, 400, 'BAD_INPUT', `text must be 1-${MAX_TEXT} characters`);
-  }
-
-  const limit = Number(process.env.RATE_LIMIT_PER_MIN || 30);
-  if (!(await allowCommand(tenant.id, limit))) {
-    log('log', { msg: 'rate limited', uid: tenant.id });
-    return sendErr(res, 429, 'RATE_LIMITED', `rate limit exceeded - max ${limit} commands per minute`);
   }
 
   // Decrypt the tenant's provider key ONLY here, only for this request.

@@ -90,3 +90,11 @@ test('stripe webhook seam -> 501 NOT_IMPLEMENTED', async () => {
   const res = await json(await fetch(`${BASE}/api/stripe/webhook`, { method: 'POST' }));
   assertEnvelope(res, 501, 'NOT_IMPLEMENTED');
 });
+
+test('non-object JSON bodies (null/array/number) -> 400, never a 500 crash', async () => {
+  const t = await freshTenant();
+  for (const body of ['null', '[1,2]', '5', '"str"']) {
+    const res = await api(t.idToken)('/api/command', { method: 'POST', body });
+    assertEnvelope(res, 400, 'BAD_INPUT');
+  }
+});

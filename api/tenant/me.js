@@ -2,10 +2,8 @@
 // WITHOUT providerKeyEnc. The key never leaves the server.
 // lastPolledAt / firstCommandAt drive the dashboard setup checklist.
 const { requireUser } = require('../../lib/auth');
-const { getTenant } = require('../../lib/firestore');
+const { getTenant, stampMs } = require('../../lib/firestore');
 const { endpoint, sendErr } = require('../../lib/http');
-
-const toMillis = (v) => (v && typeof v.toMillis === 'function' ? v.toMillis() : (typeof v === 'number' ? v : null));
 
 module.exports = endpoint(['GET'], async (req, res) => {
   const user = await requireUser(req);
@@ -23,8 +21,8 @@ module.exports = endpoint(['GET'], async (req, res) => {
       hasKey: Boolean(tenant.providerKeyEnc),
       bridgeToken: tenant.bridgeToken,
       allowedActions: tenant.allowedActions,
-      lastPolledAt: toMillis(tenant.lastPolledAt),
-      firstCommandAt: toMillis(tenant.firstCommandAt),
+      lastPolledAt: stampMs(tenant.lastPolledAt),
+      firstCommandAt: stampMs(tenant.firstCommandAt),
     },
   });
 });

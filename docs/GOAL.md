@@ -21,7 +21,7 @@
 
 ## Status (2026-08-10, post-polish)
 
-- ✅ Platform hardened and proven: **`npm test` 44/44** (auth, pay-gate cycle, key custody, interpretation incl. rogue-provider whitelist proof, queue, envelope, rate limiting) + `npm run smoke:emulator` 15/15.
+- ✅ Platform hardened and proven: **`npm test` 45/45** (auth, pay-gate cycle, key custody, interpretation incl. rogue-provider whitelist proof, queue, envelope, rate limiting) + `npm run smoke:emulator` 15/15.
 - ✅ One coherent product surface: marketing site + console (`/`) and the rebuilt owner dashboard (`/dashboard`) share one design system (see [UIUX.md](UIUX.md)); session persistence, translated failure states everywhere, 4-step setup checklist.
 - ✅ Backend: error envelope, security headers/CSP, per-tenant rate limit, request-id logs, `lastPolledAt`/`firstCommandAt` telemetry ([API.md](API.md)).
 - ✅ Legacy single-tenant demo (`backend/`) untouched and green: 7/7.

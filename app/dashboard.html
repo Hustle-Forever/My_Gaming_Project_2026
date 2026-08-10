@@ -461,8 +461,7 @@ async function doAuth(){
  }catch(e){
   const code=e&&e.code;
   $("aErr").textContent=code==="auth/network-request-failed"?t("errNet"):
-   (code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")?t("errCreds"):
-   code==="auth/email-already-in-use"?t("errTaken"):t("errGeneric");
+   (code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")?t("errCreds"):t("errGeneric");
  }finally{$("authBtn").disabled=false;}
 }
 function doSignOut(){
@@ -492,6 +491,7 @@ async function enter(){
 }
 function retryLoad(){enter();}
 function startRefresh(){stopRefresh();REFRESH=setInterval(async()=>{
+ if(document.hidden)return; // visibilitychange refetches on return; hidden tabs must not bill reads
  try{if(await loadTenant())render();}catch(e){}},45000);}
 function stopRefresh(){if(REFRESH){clearInterval(REFRESH);REFRESH=null;}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&TENANT)enter();});

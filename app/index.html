@@ -524,7 +524,7 @@ const I18N={
   qaLabel:"Quick commands",phRun:"Type a command…",phAsk:"Ask about your server…",
   note:"Run commands are in-game only — from a fixed, approved list.",
   setTitle:"Settings",theme:"Theme",dark:"Dark",light:"Light",language:"Language",
-  advanced:"Backend URL",advancedSub:"Blank = same site",signOut:"Sign out",
+  advanced:"Backend URL",advancedSub:"Blank = same site. Another origin needs ALLOWED_ORIGIN set on the API.",signOut:"Sign out",
   modeRun:"Run",modeAsk:"Ask",answer:"Answer",listening:"Listening…",stop:"Stop",
   listenHint:"Speak your command — it sends automatically",
   ok:"Connected",off:"Offline",locked:"Plan inactive",
@@ -542,7 +542,7 @@ const I18N={
   qaLabel:"أوامر سريعة",phRun:"اكتب أمرًا…",phAsk:"اسأل عن سيرفرك…",
   note:"أوامر التنفيذ داخل اللعبة فقط — من قائمة معتمدة.",
   setTitle:"الإعدادات",theme:"المظهر",dark:"داكن",light:"فاتح",language:"اللغة",
-  advanced:"رابط الـBackend",advancedSub:"فارغ = نفس الموقع",signOut:"تسجيل الخروج",
+  advanced:"رابط الـBackend",advancedSub:"فارغ = نفس الموقع. أصل مختلف يحتاج ALLOWED_ORIGIN على الخادم.",signOut:"تسجيل الخروج",
   modeRun:"تنفيذ",modeAsk:"سؤال",answer:"إجابة",listening:"أستمع…",stop:"إيقاف",
   listenHint:"قل أمرك — يُرسل تلقائيًا",
   ok:"متصل",off:"غير متصل",locked:"الاشتراك موقوف",
@@ -615,7 +615,9 @@ function sessionExpired(){
  document.documentElement.dir="ltr";
  openAuth("login");$("aErr").textContent=t("stAuth");
 }
-/* Loads /api/tenant/me into SESSION. Returns "ok" | "offline" | "expired". */
+/* Loads /api/tenant/me into SESSION.
+   "ok" | "expired" (401) | "error" (server answered but broken - fail CLOSED)
+   | "offline" (network unreachable - enter console, everything shows off). */
 async function loadTenantIntoSession(fallbackName){
  try{
   const r=await authedFetch("/api/tenant/me");
@@ -626,7 +628,7 @@ async function loadTenantIntoSession(fallbackName){
     hasKey:!!d.tenant.hasKey,lastPolledAt:d.tenant.lastPolledAt||null,dismissed:false};
    return "ok";
   }
-  return "offline";
+  return "error";
  }catch(e){return "offline";}
 }
 async function doAuth(){
@@ -653,13 +655,14 @@ async function doAuth(){
   await fb.signIn(email,pass);
   const state=await loadTenantIntoSession(name||email.split("@")[0]);
   if(state==="expired"){$("aErr").textContent=t("stAuth");return;}
+  if(state==="error"){$("aErr").textContent="Something went wrong. Try again.";return;} // fail closed
   if(state==="offline")SESSION={name:name||email.split("@")[0]||"My server",active:true,hasKey:true,offline:true};
   enterConsole();
+  if(state==="offline")refreshStat("off");
  }catch(e){
   const code=e&&e.code;
   $("aErr").textContent=code==="auth/network-request-failed"?"Couldn’t reach the server.":
-   (code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")?"Wrong email or password.":
-   code==="auth/email-already-in-use"?"That email is already registered.":"Something went wrong. Try again.";
+   (code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")?"Wrong email or password.":"Something went wrong. Try again.";
  }
 }
 /* Session persistence: the Firebase module fires mirsal-auth-ready once the
@@ -670,7 +673,8 @@ function bootSession(){
   if(BOOTED||!e.detail.signedIn)return;
   BOOTED=true;
   const state=await loadTenantIntoSession();
-  if(state==="expired"){BOOTED=false;if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});return;}
+  if(state==="expired"||state==="error"){ // fail closed: stay on the site
+   BOOTED=false;if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});return;}
   if(state==="offline")SESSION={name:"My server",active:true,hasKey:true,offline:true};
   enterConsole();
   if(state==="offline")refreshStat("off");
