@@ -863,14 +863,22 @@ async function toggleMic(){
 function anim(){if(!lis||!an)return;
  an.getByteFrequencyData(da);let sum=0;for(let i=0;i<da.length;i++)sum+=da[i];
  const lv=Math.min(1,(sum/da.length)/70);
- if(FXS.lis)FXS.lis.setLevel(lv*1.6);   // voice level -> orb wave distortion + spin
- $("lisOrb").style.transform="scale("+(1+lv*.16).toFixed(3)+")";
+ if(FXS.lis)FXS.lis.setLevel(lv);       // enveloped in fx.js: breathes, doesn't jitter
+ $("lisOrb").style.transform="scale("+(1+lv*.09).toFixed(3)+")";
  const halo=$("halo"),ring=$("ring"); // only exist in the CSS fallback (no WebGL)
  if(halo){halo.style.opacity=(.25+lv*.75).toFixed(2);halo.style.transform="scale("+(.92+lv*.3).toFixed(3)+")";}
  if(ring){ring.style.opacity=(.15+lv*.6).toFixed(2);ring.style.transform="scale("+(1+lv*.22).toFixed(3)+")";}
- const st=Math.floor(da.length/NB);
- for(let i=0;i<NB;i++){let v=0;for(let j=0;j<st;j++)v+=da[i*st+j];v=v/st/255;
-  bars[i].style.height=Math.max(4,Math.min(42,4+v*68))+"px";bars[i].style.opacity=(.4+v*.6).toFixed(2);}
+ // symmetric center-out spectrum: voice energy blooms from the middle,
+ // tapering toward the edges
+ const half=NB/2,span=Math.max(1,Math.floor((da.length*.55)/half));
+ for(let i=0;i<NB;i++){
+  const d=Math.abs(i+.5-half)/half;
+  const bin=Math.floor(d*da.length*.55);
+  let v=0;for(let j=0;j<span;j++)v+=da[Math.min(da.length-1,bin+j)];
+  v=v/span/255;
+  bars[i].style.height=Math.max(4,Math.min(42,4+v*52*(1-d*.45)))+"px";
+  bars[i].style.opacity=(.35+v*.65).toFixed(2);
+ }
  raf=requestAnimationFrame(anim);}
 function stopMic(){lis=false;try{rec&&rec.stop();}catch(e){}
  if(FXS.lis)FXS.lis.setLevel(0);
@@ -899,7 +907,8 @@ function initFX(){
      backdrop; dark composites to true transparency in both themes. */
   const lw=$("lisOrb");
   if(lw){lw.innerHTML="";const c=document.createElement("div");c.style.cssText="position:absolute;inset:0";
-   lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.7,rotateOnHover:true,background:"#0A0B0E"});}
+   lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.32,hueShift:24,attack:.3,release:.06,
+    rotateOnHover:true,background:"#0A0B0E"});}
  }catch(e){console.warn("fx init failed:",e);}
 }
 

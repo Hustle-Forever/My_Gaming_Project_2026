@@ -237,6 +237,12 @@
     const hue = Number(opts.hue) || 0;
     const hoverIntensity = opts.hoverIntensity !== undefined ? opts.hoverIntensity : 0.2;
     const rotateOnHover = opts.rotateOnHover !== false;
+    // voice character: hueShift warms the orb color while speaking; attack/
+    // release shape the envelope (react fast, relax slowly - breathing, not
+    // jitter). All optional; zero-cost when unused.
+    const hueShift = Number(opts.hueShift) || 0;
+    const attack = opts.attack !== undefined ? opts.attack : 0.35;
+    const release = opts.release !== undefined ? opts.release : 0.08;
     let background = hexToRgb(opts.background || '#000000');
     const eventTarget = opts.eventTarget || container;
 
@@ -244,7 +250,8 @@
     const stopResize = autoResize(ctx, container, (w, h) => { res = [w, h, w / h]; });
 
     let targetHover = 0;   // mouse proximity
-    let level = 0;         // voice level (setLevel) - whichever is stronger wins
+    let level = 0;         // raw voice level (setLevel)
+    let levelSm = 0;       // enveloped voice level (attack/release smoothing)
     let hoverVal = 0;
     let rot = 0;
     let last = 0;
@@ -268,13 +275,15 @@
       const dt = (t - last) * 0.001;
       last = t;
       if (!visible(container)) return; // hidden view (e.g. console open) - skip GPU work
-      const effective = Math.max(targetHover, Math.min(1, level));
+      levelSm += (level - levelSm) * (level > levelSm ? attack : release);
+      const effective = Math.max(targetHover, Math.min(1, levelSm));
       hoverVal += (effective - hoverVal) * 0.1;
-      if (rotateOnHover && effective > 0.5) rot += dt * 0.3;
+      // speech makes it turn gently, faster the louder you are
+      if (rotateOnHover && effective > 0.15) rot += dt * (0.25 + effective * 0.5);
       gl.useProgram(P.prog);
       P.f('iTime', t * 0.001);
       P.v3('iResolution', res);
-      P.f('hue', hue);
+      P.f('hue', hue + hueShift * hoverVal);
       P.f('hover', hoverVal);
       P.f('rot', rot);
       P.f('hoverIntensity', hoverIntensity);
