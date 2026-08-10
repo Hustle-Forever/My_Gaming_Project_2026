@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Clients get NO direct Firestore access at all. Every read and write goes
+// through the Vercel API functions, which use the Admin SDK (bypasses rules).
+// This is the strongest form of the requirement that clients must never read
+// providerKeyEnc or write `active`: they can't read or write anything.
+// The tenant's own data is served (key stripped) by GET /api/tenant/me.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

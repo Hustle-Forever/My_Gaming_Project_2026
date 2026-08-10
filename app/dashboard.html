@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Mirsal — Owner dashboard</title>
+<style>
+:root{
+  --shell-1:#0C0E12; --shell-2:#0A0B0E; --bg:#0A0B0E;
+  --surface:#15181E; --surface-2:#1B1F27; --surface-3:#22262F;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.13);
+  --text:#F4F6F8; --dim:#9AA1AB; --faint:#616874;
+  --lime:#C4F042; --lime-ink:#16240A; --lime-soft:rgba(196,240,66,.14);
+  --violet:#A98BFB; --violet-soft:rgba(169,139,251,.16);
+  --pink:#F3A5C6; --pink-soft:rgba(243,165,198,.16);
+  --amber:#F2C14E; --red:#F0776F;
+  --radius:20px; --radius-sm:13px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+  --mono:ui-monospace,"Cascadia Code",Consolas,monospace;
+}
+[data-theme="light"]{
+  --shell-1:#FFFFFF; --shell-2:#F4F5F2; --bg:#F4F5F2;
+  --surface:#FFFFFF; --surface-2:#F3F4F6; --surface-3:#E7E9ED;
+  --line:rgba(0,0,0,.09); --line-2:rgba(0,0,0,.16);
+  --text:#161A20; --dim:#5B636E; --faint:#8A929C;
+  --lime:#AEDC2E; --lime-ink:#1c2b06; --lime-soft:rgba(120,165,20,.18);
+  --violet:#7C5CE6; --violet-soft:rgba(124,92,230,.14);
+  --pink:#D96BA0; --pink-soft:rgba(217,107,160,.14);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;display:flex;justify-content:center;transition:background .25s}
+.shell{position:relative;width:100%;max-width:560px;min-height:100dvh;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--shell-1),var(--shell-2) 42%);border-inline:1px solid var(--line)}
+@media (max-width:580px){.shell{border-inline:0}}
+
+.login{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:center;padding:32px 26px;
+  background:linear-gradient(180deg,var(--shell-1),var(--shell-2) 42%);transition:opacity .3s}
+.login.hide{opacity:0;pointer-events:none}
+.login h1{font-size:23px;font-weight:600;text-align:center;margin:0 0 6px;letter-spacing:-.3px}
+.login p{color:var(--dim);text-align:center;font-size:13.5px;margin:0 auto 26px;max-width:300px;line-height:1.5}
+.login .field{margin-bottom:12px}
+.login input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;color:var(--text);
+  font-family:var(--sans);font-size:15px;padding:14px;outline:0;transition:.15s}
+.login input:focus{border-color:var(--line-2)}
+.login .btn{width:100%;margin-top:6px;background:var(--lime);color:var(--lime-ink);border:0;border-radius:13px;
+  padding:15px;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer}
+.login .err{color:var(--red);font-size:12.5px;text-align:center;margin:12px 0 0;min-height:16px}
+.login .swap{text-align:center;margin-top:18px;font-size:13px;color:var(--dim)}
+.login .swap a{color:var(--violet);cursor:pointer;text-decoration:none;font-weight:600}
+
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;margin-inline-end:auto;min-width:0}
+.mark{width:34px;height:34px;border-radius:11px;flex:0 0 auto;position:relative;overflow:hidden;
+  background:conic-gradient(from 210deg,#5CE1E6,#A98BFB,#F3A5C6,#C4F042,#5CE1E6)}
+.mark::after{content:"";position:absolute;inset:3px;border-radius:8px;background:var(--shell-1)}
+.mark svg{position:absolute;inset:0;margin:auto;width:18px;height:18px;z-index:1}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+.brand-name{font-weight:600;font-size:15px}
+.brand-tag{font-size:10.5px;color:var(--faint);letter-spacing:.3px}
+.iconbtn{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--dim);border-radius:11px;transition:.15s}
+.iconbtn:hover{color:var(--text);border-color:var(--line-2);background:var(--surface-2)}
+.iconbtn svg{width:17px;height:17px}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface);flex:0 0 auto}
+.lang button{border:0;background:transparent;color:var(--faint);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 8px;cursor:pointer;min-width:32px}
+.lang button.on{background:var(--lime);color:var(--lime-ink)}
+
+.main{flex:1 1 auto;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.card h2{margin:0 0 4px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card .sub{font-size:12.5px;color:var(--dim);margin:0 0 14px;line-height:1.55}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:999px}
+.pill .d{width:8px;height:8px;border-radius:50%}
+.pill.ok{background:var(--lime-soft);color:var(--lime)}.pill.ok .d{background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.pill.bad{background:rgba(240,119,111,.13);color:var(--red)}.pill.bad .d{background:var(--red)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.seg button{border:0;background:transparent;color:var(--dim);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 14px;cursor:pointer}
+.seg button.on{background:var(--surface-3);color:var(--text)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+.inrow{display:flex;gap:9px;margin-top:12px}
+.inrow input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text);
+  font-family:var(--mono);font-size:13px;padding:11px 12px;outline:0}
+.inrow input:focus{border-color:var(--line-2)}
+.abtn{border:0;border-radius:11px;background:var(--lime);color:var(--lime-ink);font-family:var(--sans);
+  font-size:13px;font-weight:700;padding:0 18px;cursor:pointer;transition:.15s}
+.abtn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.abtn:disabled{opacity:.5;cursor:wait}
+.tokenbox{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-top:12px}
+.tokenbox code{flex:1;min-width:0;font-family:var(--mono);font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr}
+pre.cfg{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:12px;margin:12px 0 0;
+  font-family:var(--mono);font-size:11.5px;line-height:1.7;color:var(--dim);overflow-x:auto;direction:ltr;text-align:left}
+.hint{font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.6}
+.okmsg{font-size:12px;color:var(--lime);min-height:15px;margin-top:8px}
+.signout{margin:4px 16px calc(18px + env(safe-area-inset-bottom));background:transparent;color:var(--red);
+  border:1px solid var(--line);border-radius:12px;padding:13px;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="login" id="login">
+    <h1 id="loginTitle" data-i18n="dashTitle">Mirsal dashboard</h1>
+    <p data-i18n="dashSub">Set up your server: AI key, bridge token, plan status.</p>
+    <div class="field" id="fName" style="display:none"><input id="liName" type="text" placeholder="Server name" data-i18n-ph="serverName"></div>
+    <div class="field"><input id="liEmail" type="email" autocomplete="username" placeholder="Email" data-i18n-ph="email"></div>
+    <div class="field"><input id="liPass" type="password" autocomplete="current-password" placeholder="Password" data-i18n-ph="password" onkeydown="if(event.key==='Enter')submitAuth()"></div>
+    <button class="btn" id="authBtn" onclick="submitAuth()" data-i18n="signInBtn">Sign in</button>
+    <div class="err" id="liErr"></div>
+    <div class="swap"><span data-i18n="noAccount">New here?</span> <a onclick="toggleSignup()" id="swapLink" data-i18n="createOne">Create an account</a></div>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M3 11l17-7-7 17-2.5-7.5L3 11z" stroke="#F4F6F8" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+      <div class="brand-txt"><span class="brand-name">Mirsal</span><span class="brand-tag" data-i18n="dashTag">Owner dashboard</span></div>
+    </div>
+    <div class="lang"><button id="langEn" class="on" onclick="setLang('en')">EN</button><button id="langAr" onclick="setLang('ar')">ع</button></div>
+    <div class="iconbtn" onclick="toggleTheme()" id="themeBtn"></div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <h2 data-i18n="statusTitle">Plan status</h2>
+      <p class="sub" id="statusSub" data-i18n="statusSubInactive">Your plan is not active yet — activation is manual for now (payments coming later). Nothing runs while inactive.</p>
+      <span class="pill bad" id="statusPill"><span class="d"></span><span id="statusPillTxt" data-i18n="inactive">Inactive</span></span>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="aiTitle">AI provider</h2>
+      <p class="sub" data-i18n="aiSub">Your own AI key powers understanding. It's stored encrypted and never shown again.</p>
+      <div class="seg">
+        <button id="pvGemini" class="on" onclick="setProvider('gemini')">Gemini</button>
+        <button id="pvClaude" disabled title="Coming soon">Claude — <span data-i18n="soon">soon</span></button>
+      </div>
+      <div class="inrow">
+        <input id="keyInput" type="password" placeholder="AIza… (Gemini API key)" autocomplete="off">
+        <button class="abtn" id="saveKeyBtn" onclick="saveKey()" data-i18n="save">Save</button>
+      </div>
+      <div class="okmsg" id="keyMsg"></div>
+      <p class="hint" data-i18n="aiHint">No key yet? Commands still work through the built-in keyword matcher — the AI key makes free-form Arabic understanding and Ask mode work.</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="bridgeTitle">FiveM bridge</h2>
+      <p class="sub" data-i18n="bridgeSub">Install the mirsal bridge resource on your FiveM server and paste these lines into server.cfg. The bridge only ever connects outward — no ports to open.</p>
+      <div class="tokenbox"><code id="tokenTxt">—</code>
+        <div class="iconbtn" onclick="copyToken()" title="Copy token"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V5a1 1 0 011-1h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      </div>
+      <pre class="cfg" id="cfgSnippet">…</pre>
+      <div class="inrow">
+        <button class="abtn ghost" style="padding:11px 18px" onclick="copyCfg()" data-i18n="copyCfg">Copy server.cfg lines</button>
+        <button class="abtn ghost" style="padding:11px 18px;color:var(--red)" onclick="rotateToken()" data-i18n="rotate">Rotate token</button>
+      </div>
+      <div class="okmsg" id="bridgeMsg"></div>
+    </div>
+  </div>
+
+  <button class="signout" onclick="doSignOut()" data-i18n="signOut">Sign out</button>
+</div>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulator: false };
+try {
+  if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || FIREBASE_CONFIG.useEmulator) {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
+    const { getAuth, signInWithEmailAndPassword, signOut, connectAuthEmulator } =
+      await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
+    const app = initializeApp(FIREBASE_CONFIG.useEmulator
+      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
+      : FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    if (FIREBASE_CONFIG.useEmulator) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    window.__mirsalFirebase = {
+      async signIn(email, password) {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        return cred.user.getIdToken();
+      },
+      async getToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; },
+      signOut() { return signOut(auth); },
+    };
+  }
+} catch (err) { console.warn("Firebase init failed:", err); }
+</script>
+
+<script>
+const CONFIG = { BACKEND_URL: "" };   // "" = same origin
+let LANG = "en", THEME = "dark", SIGNUP = false, TENANT = null;
+
+const I18N = {
+  en: {
+    dashTitle:"Mirsal dashboard", dashSub:"Set up your server: AI key, bridge token, plan status.",
+    dashTag:"Owner dashboard", email:"Email", password:"Password", serverName:"Server name",
+    signInBtn:"Sign in", signUpBtn:"Create account", noAccount:"New here?", createOne:"Create an account",
+    haveAccount:"Already have an account?", signInLink:"Sign in",
+    statusTitle:"Plan status", inactive:"Inactive", activeLbl:"Active",
+    statusSubInactive:"Your plan is not active yet — activation is manual for now (payments coming later). Nothing runs while inactive.",
+    statusSubActive:"Your plan is active — commands run on your server.",
+    aiTitle:"AI provider", aiSub:"Your own AI key powers understanding. It's stored encrypted and never shown again.",
+    save:"Save", soon:"soon", saved:"Key saved ✓ (stored encrypted)", keyErr:"Couldn't save the key.",
+    aiHint:"No key yet? Commands still work through the built-in keyword matcher — the AI key makes free-form Arabic understanding and Ask mode work.",
+    bridgeTitle:"FiveM bridge", bridgeSub:"Install the mirsal bridge resource on your FiveM server and paste these lines into server.cfg. The bridge only ever connects outward — no ports to open.",
+    copyCfg:"Copy server.cfg lines", rotate:"Rotate token", copied:"Copied ✓",
+    rotated:"New token generated — update server.cfg, the old one is dead.",
+    rotateConfirm:"Rotate the bridge token? Your FiveM server stops receiving commands until you paste the new one into server.cfg.",
+    signOut:"Sign out", badCreds:"Wrong email or password.", netErr:"Couldn't reach the server.",
+    signupErr:"Couldn't create the account.", emailTaken:"That email is already registered.",
+  },
+  ar: {
+    dashTitle:"لوحة تحكم Mirsal", dashSub:"جهّز سيرفرك: مفتاح الذكاء، رمز الجسر، حالة الاشتراك.",
+    dashTag:"لوحة المالك", email:"البريد الإلكتروني", password:"كلمة المرور", serverName:"اسم السيرفر",
+    signInBtn:"دخول", signUpBtn:"إنشاء حساب", noAccount:"جديد هنا؟", createOne:"أنشئ حسابًا",
+    haveAccount:"عندك حساب؟", signInLink:"سجّل الدخول",
+    statusTitle:"حالة الاشتراك", inactive:"غير مفعّل", activeLbl:"مفعّل",
+    statusSubInactive:"اشتراكك غير مفعّل بعد — التفعيل يدوي حاليًا (الدفع لاحقًا). لا شيء يعمل قبل التفعيل.",
+    statusSubActive:"اشتراكك مفعّل — الأوامر تعمل على سيرفرك.",
+    aiTitle:"مزوّد الذكاء", aiSub:"مفتاحك الخاص هو اللي يشغّل الفهم. يُخزَّن مشفّرًا ولا يُعرض مرة أخرى.",
+    save:"حفظ", soon:"قريبًا", saved:"تم حفظ المفتاح ✓ (مخزّن مشفّرًا)", keyErr:"تعذّر حفظ المفتاح.",
+    aiHint:"بدون مفتاح؟ الأوامر تشتغل بالمطابقة النصية — المفتاح يضيف الفهم الحر ووضع «سؤال».",
+    bridgeTitle:"جسر FiveM", bridgeSub:"ركّب مورد mirsal bridge على سيرفرك والصق هذه الأسطر في server.cfg. الجسر يتصل للخارج فقط — بدون فتح منافذ.",
+    copyCfg:"نسخ أسطر server.cfg", rotate:"تدوير الرمز", copied:"تم النسخ ✓",
+    rotated:"تم توليد رمز جديد — حدّث server.cfg، الرمز القديم توقف.",
+    rotateConfirm:"تدوير رمز الجسر؟ سيرفرك يتوقف عن استقبال الأوامر حتى تلصق الرمز الجديد في server.cfg.",
+    signOut:"تسجيل الخروج", badCreds:"بريد أو كلمة مرور غير صحيحة.", netErr:"تعذّر الوصول للخادم.",
+    signupErr:"تعذّر إنشاء الحساب.", emailTaken:"هذا البريد مسجّل من قبل.",
+  },
+};
+const $ = (id) => document.getElementById(id);
+const t = (k) => I18N[LANG][k];
+const SUN='<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="none"><path d="M20 14a8 8 0 01-10-10 8 8 0 1010 10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+
+function setTheme(th){THEME=th;document.documentElement.dataset.theme=th;$("themeBtn").innerHTML=th==="dark"?MOON:SUN;}
+function toggleTheme(){setTheme(THEME==="dark"?"light":"dark");}
+function setLang(l){LANG=l;document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";
+  $("langEn").classList.toggle("on",l==="en");$("langAr").classList.toggle("on",l==="ar");
+  document.querySelectorAll("[data-i18n]").forEach(el=>{const v=t(el.dataset.i18n);if(v)el.textContent=v;});
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{const v=t(el.dataset.i18nPh);if(v)el.placeholder=v;});
+  applySignupLabels();renderTenant();}
+
+function toggleSignup(){SIGNUP=!SIGNUP;applySignupLabels();$("liErr").textContent="";}
+function applySignupLabels(){
+  $("fName").style.display=SIGNUP?"block":"none";
+  $("authBtn").textContent=t(SIGNUP?"signUpBtn":"signInBtn");
+  $("swapLink").textContent=t(SIGNUP?"signInLink":"createOne");
+  $("swapLink").previousElementSibling.textContent=t(SIGNUP?"haveAccount":"noAccount");
+}
+
+async function getToken(){return window.__mirsalFirebase?window.__mirsalFirebase.getToken():null;}
+async function api(path,opts={}){
+  const token=await getToken();
+  const res=await fetch((CONFIG.BACKEND_URL||"")+path,{...opts,
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||""),...(opts.headers||{})}});
+  return {status:res.status,body:await res.json().catch(()=>({}))};
+}
+
+async function submitAuth(){
+  const email=$("liEmail").value.trim(),pass=$("liPass").value;$("liErr").textContent="";
+  if(!email||!pass){$("liErr").textContent=t("badCreds");return;}
+  const fb=window.__mirsalFirebase;
+  if(!fb){$("liErr").textContent=t("netErr");return;}
+  try{
+    if(SIGNUP){
+      const res=await fetch((CONFIG.BACKEND_URL||"")+"/api/signup",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email,password:pass,name:$("liName").value.trim()})});
+      if(res.status===409){$("liErr").textContent=t("emailTaken");return;}
+      if(!res.ok){$("liErr").textContent=t("signupErr");return;}
+    }
+    await fb.signIn(email,pass);
+    await loadTenant();
+    $("login").classList.add("hide");
+  }catch(e){
+    $("liErr").textContent=(e&&e.code==="auth/network-request-failed")?t("netErr"):t("badCreds");
+  }
+}
+
+async function loadTenant(){
+  const me=await api("/api/tenant/me");
+  if(me.status===200&&me.body.tenant){TENANT=me.body.tenant;renderTenant();}
+}
+function cfgLines(){
+  const base=CONFIG.BACKEND_URL||location.origin;
+  return `set airp_backend_url "${base}"\nset airp_bridge_token "${TENANT?TENANT.bridgeToken:""}"\nensure mirsal-bridge`;
+}
+function renderTenant(){
+  if(!TENANT)return;
+  const on=!!TENANT.active;
+  $("statusPill").className="pill "+(on?"ok":"bad");
+  $("statusPillTxt").textContent=t(on?"activeLbl":"inactive");
+  $("statusSub").textContent=t(on?"statusSubActive":"statusSubInactive");
+  $("tokenTxt").textContent=TENANT.bridgeToken;
+  $("cfgSnippet").textContent=cfgLines();
+  $("keyInput").placeholder=TENANT.hasKey?"••••••••••••  ("+(TENANT.provider||"gemini")+" key saved)":"AIza… (Gemini API key)";
+}
+function setProvider(p){/* only gemini selectable today */}
+
+async function saveKey(){
+  const key=$("keyInput").value.trim();$("keyMsg").textContent="";
+  if(key.length<10)return;
+  $("saveKeyBtn").disabled=true;
+  const res=await api("/api/tenant/key",{method:"POST",body:JSON.stringify({apiKey:key,provider:"gemini"})});
+  $("saveKeyBtn").disabled=false;
+  if(res.status===200){$("keyMsg").textContent=t("saved");$("keyInput").value="";TENANT.hasKey=true;renderTenant();}
+  else $("keyMsg").textContent=t("keyErr");
+}
+
+async function rotateToken(){
+  if(!confirm(t("rotateConfirm")))return;
+  const res=await api("/api/tenant/rotate-bridge-token",{method:"POST"});
+  if(res.status===200&&res.body.bridgeToken){TENANT.bridgeToken=res.body.bridgeToken;renderTenant();$("bridgeMsg").textContent=t("rotated");}
+}
+function copyToken(){navigator.clipboard.writeText(TENANT?TENANT.bridgeToken:"").then(()=>{$("bridgeMsg").textContent=t("copied");});}
+function copyCfg(){navigator.clipboard.writeText(cfgLines()).then(()=>{$("bridgeMsg").textContent=t("copied");});}
+
+function doSignOut(){
+  if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+  TENANT=null;$("login").classList.remove("hide");
+}
+
+setTheme("dark");setLang("en");
+</script>
+</body>
+</html>

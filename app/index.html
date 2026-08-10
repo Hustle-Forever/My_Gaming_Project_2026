@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Mirsal — FiveM command console</title>
+<style>
+:root{
+  --shell-1:#0C0E12; --shell-2:#0A0B0E; --bg:#0A0B0E;
+  --surface:#15181E; --surface-2:#1B1F27; --surface-3:#22262F;
+  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.13);
+  --text:#F4F6F8; --dim:#9AA1AB; --faint:#616874;
+  --lime:#C4F042; --lime-ink:#16240A; --lime-soft:rgba(196,240,66,.14);
+  --violet:#A98BFB; --violet-soft:rgba(169,139,251,.16);
+  --pink:#F3A5C6; --pink-soft:rgba(243,165,198,.16);
+  --amber:#F2C14E; --red:#F0776F;
+  --radius:20px; --radius-sm:13px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+}
+[data-theme="light"]{
+  --shell-1:#FFFFFF; --shell-2:#F4F5F2; --bg:#F4F5F2;
+  --surface:#FFFFFF; --surface-2:#F3F4F6; --surface-3:#E7E9ED;
+  --line:rgba(0,0,0,.09); --line-2:rgba(0,0,0,.16);
+  --text:#161A20; --dim:#5B636E; --faint:#8A929C;
+  --lime:#AEDC2E; --lime-ink:#1c2b06; --lime-soft:rgba(120,165,20,.18);
+  --violet:#7C5CE6; --violet-soft:rgba(124,92,230,.14);
+  --pink:#D96BA0; --pink-soft:rgba(217,107,160,.14);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;display:flex;justify-content:center;transition:background .25s}
+.shell{position:relative;width:100%;max-width:460px;height:100dvh;height:100vh;display:flex;flex-direction:column;
+  overflow:hidden;background:linear-gradient(180deg,var(--shell-1),var(--shell-2) 42%);
+  border-inline:1px solid var(--line);transition:background .25s}
+@media (max-width:480px){.shell{border-inline:0}}
+
+.orb-wrap{position:relative;transition:.4s}
+.orb{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(60% 55% at 32% 30%, #7FE9EE 0%, transparent 55%),
+    radial-gradient(55% 55% at 72% 32%, #C7A3FF 0%, transparent 55%),
+    radial-gradient(60% 60% at 66% 74%, #F3A5C6 0%, transparent 55%),
+    radial-gradient(65% 65% at 30% 72%, #C4F042 0%, transparent 58%), #10131a;
+  filter:blur(1px) saturate(1.15);animation:spin 14s linear infinite;
+  box-shadow:0 0 44px rgba(150,120,255,.25), inset 0 0 30px rgba(0,0,0,.5)}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(40% 30% at 38% 30%, rgba(255,255,255,.55) 0%, transparent 60%);
+  mix-blend-mode:screen;animation:spin 9s linear infinite reverse}
+.listening .orb{animation-duration:5s;box-shadow:0 0 60px rgba(196,240,66,.5),inset 0 0 30px rgba(0,0,0,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.orb,.orb::after{animation:none}}
+
+.login{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:center;padding:32px 26px;
+  background:linear-gradient(180deg,var(--shell-1),var(--shell-2) 42%);transition:opacity .3s}
+.login.hide{opacity:0;pointer-events:none}
+.login .orb-wrap{width:96px;height:96px;margin:0 auto 22px}
+.login h1{font-size:23px;font-weight:600;text-align:center;margin:0 0 6px;letter-spacing:-.3px}
+.login p{color:var(--dim);text-align:center;font-size:13.5px;margin:0 auto 26px;max-width:280px;line-height:1.5}
+.login .field{margin-bottom:12px}
+.login input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;color:var(--text);
+  font-family:var(--sans);font-size:15px;padding:14px;outline:0;transition:.15s}
+.login input:focus{border-color:var(--line-2)}
+.login .btn{width:100%;margin-top:6px;background:var(--lime);color:var(--lime-ink);border:0;border-radius:13px;
+  padding:15px;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer}
+.login .err{color:var(--red);font-size:12.5px;text-align:center;margin:12px 0 0;min-height:16px}
+.login .foot{text-align:center;margin-top:22px;font-size:12.5px;color:var(--faint)}
+
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:14px 14px 12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;margin-inline-end:auto;min-width:0}
+.mark{width:34px;height:34px;border-radius:11px;flex:0 0 auto;position:relative;overflow:hidden;
+  background:conic-gradient(from 210deg,#5CE1E6,#A98BFB,#F3A5C6,#C4F042,#5CE1E6)}
+.mark::after{content:"";position:absolute;inset:3px;border-radius:8px;background:var(--shell-1)}
+.mark svg{position:absolute;inset:0;margin:auto;width:18px;height:18px;z-index:1}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+.brand-name{font-weight:600;font-size:15px}
+.brand-tag{font-size:10.5px;color:var(--faint);letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--dim);padding:5px 8px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.status[data-state="ok"] .dot{background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.status[data-state="locked"] .dot{background:var(--red)}
+.iconbtn{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--dim);border-radius:11px;transition:.15s}
+.iconbtn:hover{color:var(--text);border-color:var(--line-2);background:var(--surface-2)}
+.iconbtn svg{width:17px;height:17px}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface);flex:0 0 auto}
+.lang button{border:0;background:transparent;color:var(--faint);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 8px;cursor:pointer;min-width:32px;transition:.15s}
+.lang button.on{background:var(--lime);color:var(--lime-ink)}
+
+.main{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:8px 16px 12px;scrollbar-width:thin}
+.main::-webkit-scrollbar{width:6px}.main::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
+.hero{padding:24px 4px 6px;text-align:center;transition:.4s}
+.hero .orb-wrap{width:132px;height:132px;margin:2px auto 16px}
+.hero.min{padding:6px 4px 0}
+.hero.min .orb-wrap{width:52px;height:52px;margin-bottom:4px}
+.hero.min .hero-title,.hero.min .hero-sub{display:none}
+.hero-title{font-size:23px;font-weight:600;letter-spacing:-.3px;margin:0 0 8px}
+.hero-sub{font-size:14px;color:var(--dim);margin:0 auto;max-width:310px;line-height:1.5}
+
+.qa-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px;margin:18px 2px 10px;font-weight:600}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qa button{display:flex;align-items:center;gap:11px;text-align:start;cursor:pointer;border:1px solid var(--line);
+  background:var(--surface);color:var(--text);border-radius:var(--radius-sm);padding:13px;font-family:var(--sans);font-size:13.5px;font-weight:500;transition:.15s}
+.qa button:hover{border-color:var(--line-2);background:var(--surface-2);transform:translateY(-1px)}
+.qa .qi{width:32px;height:32px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center}
+.qa .qi svg{width:16px;height:16px}
+.qi.lime{background:var(--lime-soft);color:var(--lime)}.qi.violet{background:var(--violet-soft);color:var(--violet)}.qi.pink{background:var(--pink-soft);color:var(--pink)}
+
+.feed{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.group{display:flex;flex-direction:column;gap:8px;animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5}
+.msg.user{align-self:flex-end;background:var(--lime);color:var(--lime-ink);font-weight:500;border-bottom-right-radius:6px}
+.msg.user.ask{background:var(--violet);color:#fff}
+html[dir="rtl"] .msg.user{border-bottom-right-radius:16px;border-bottom-left-radius:6px}
+.msg.bot{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:6px}
+html[dir="rtl"] .msg.bot{border-bottom-left-radius:16px;border-bottom-right-radius:6px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:999px;margin-bottom:7px}
+.badge.lime{background:var(--lime-soft);color:var(--lime)}.badge.violet{background:var(--violet-soft);color:var(--violet)}
+.badge.pink{background:var(--pink-soft);color:var(--pink)}.badge.dim{background:var(--surface-3);color:var(--dim)}
+.msg.bot .txt{color:var(--text)}
+.status-chip{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font-size:11.5px;color:var(--dim)}
+.status-chip .d{width:6px;height:6px;border-radius:50%;background:var(--lime)}
+.status-chip.warn{color:var(--amber)}.status-chip.warn .d{background:var(--amber)}
+.status-chip.err{color:var(--red)}.status-chip.err .d{background:var(--red)}
+.status-chip.dim{color:var(--faint)}.status-chip.dim .d{background:var(--faint)}
+.typing{display:inline-flex;gap:4px;padding:2px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--dim);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+.modebar{flex:0 0 auto;display:flex;justify-content:center;padding:6px 14px 0}
+.mode{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.mode button{border:0;background:transparent;color:var(--dim);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 18px;border-radius:9px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+.mode button svg{width:14px;height:14px}
+.mode button.on[data-m="run"]{background:var(--lime);color:var(--lime-ink)}
+.mode button.on[data-m="ask"]{background:var(--violet);color:#fff}
+
+.dock{flex:0 0 auto;padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,var(--bg) 34%)}
+.dock-inner{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px;padding-inline-start:14px}
+.dock-inner:focus-within{border-color:var(--line-2)}
+.dock input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);font-family:var(--sans);font-size:15px;padding:8px 0}
+.dock input::placeholder{color:var(--faint)}
+.mic{width:40px;height:40px;flex:0 0 auto;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--dim);display:grid;place-items:center;cursor:pointer;transition:.15s}
+.mic:hover{color:var(--text)}
+.mic.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(196,240,66,.45)}70%{box-shadow:0 0 0 12px rgba(196,240,66,0)}100%{box-shadow:0 0 0 0 rgba(196,240,66,0)}}
+.mic svg,.send svg{width:18px;height:18px}
+.send{width:44px;height:44px;flex:0 0 auto;border-radius:12px;border:0;background:var(--lime);color:var(--lime-ink);display:grid;place-items:center;cursor:pointer;transition:.15s}
+.send.ask{background:var(--violet);color:#fff}
+.send:hover{filter:brightness(1.05)}
+.dock-note{text-align:center;font-size:11px;color:var(--faint);margin:9px 4px 0;line-height:1.4}
+
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.2s;z-index:5}
+.backdrop.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line-2);
+  border-radius:22px 22px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);max-height:88%;overflow-y:auto}
+.sheet.show{transform:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sheet h3{margin:0;font-size:17px;font-weight:600}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.row:last-of-type{border-bottom:0}
+.row .lbl{font-size:14px}.row .sub{font-size:11.5px;color:var(--faint);margin-top:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);flex:0 0 auto}
+.seg button{border:0;background:transparent;color:var(--dim);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 12px;cursor:pointer}
+.seg button.on{background:var(--surface-3);color:var(--text)}
+.field-in{width:150px;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 10px;outline:0}
+.signout{width:100%;margin-top:16px;background:transparent;color:var(--red);border:1px solid var(--line);border-radius:12px;padding:13px;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+
+  <div class="login" id="login">
+    <div class="orb-wrap"><div class="orb"></div></div>
+    <h1 data-i18n="signInTo">Sign in to Mirsal</h1>
+    <p data-i18n="signInSub">Control your FiveM server by voice or text.</p>
+    <div class="field"><input id="liEmail" type="email" autocomplete="username" placeholder="Email" data-i18n-ph="email" onkeydown="if(event.key==='Enter')signIn()"></div>
+    <div class="field"><input id="liPass" type="password" autocomplete="current-password" placeholder="Password" data-i18n-ph="password" onkeydown="if(event.key==='Enter')signIn()"></div>
+    <button class="btn" onclick="signIn()" data-i18n="signInBtn">Sign in</button>
+    <div class="err" id="liErr"></div>
+    <div class="foot"><span data-i18n="tag">FiveM control</span></div>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M3 11l17-7-7 17-2.5-7.5L3 11z" stroke="#F4F6F8" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+      <div class="brand-txt"><span class="brand-name">Mirsal</span><span class="brand-tag" id="tenantTag" data-i18n="tag">FiveM control</span></div>
+    </div>
+    <div class="status" id="status" data-state="off"><span class="dot"></span><span id="statusTxt">Offline</span></div>
+    <div class="lang"><button id="langEn" class="on" onclick="setLang('en')">EN</button><button id="langAr" onclick="setLang('ar')">ع</button></div>
+    <div class="iconbtn" onclick="toggleTheme()" aria-label="Theme" id="themeBtn"></div>
+    <div class="iconbtn" onclick="openSheet()" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <div class="main" id="main">
+    <div class="hero" id="hero">
+      <div class="orb-wrap"><div class="orb"></div></div>
+      <h1 class="hero-title" data-i18n="title">How can I help your server?</h1>
+      <p class="hero-sub" data-i18n="sub">Talk or type — Run executes in-game, Ask just answers.</p>
+    </div>
+    <div class="qa-label" data-i18n="qaLabel">Quick commands</div>
+    <div class="qa" id="qa"></div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <div class="modebar">
+    <div class="mode" id="mode">
+      <button data-m="run" class="on" onclick="setMode('run')"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span data-i18n="modeRun">Run</span></button>
+      <button data-m="ask" onclick="setMode('ask')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 00-9 9c0 1.6.4 3 1.2 4.3L3 21l4.7-1.2A9 9 0 1012 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span data-i18n="modeAsk">Ask</span></button>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="dock-inner">
+      <input id="cmd" type="text" autocomplete="off" placeholder="Type a command…" data-i18n-ph="phRun" onkeydown="if(event.key==='Enter')send()">
+      <div class="mic" id="mic" onclick="toggleMic()" aria-label="Voice"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0012 0M12 17v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+      <button class="send" id="send" onclick="send()" aria-label="Send"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></button>
+    </div>
+    <p class="dock-note" data-i18n="note">Run commands are in-game only — from a fixed, approved list.</p>
+  </div>
+
+  <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-head"><h3 data-i18n="setTitle">Settings</h3>
+      <div class="iconbtn" onclick="closeSheet()"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+    </div>
+    <div class="row"><div><div class="lbl" data-i18n="theme">Theme</div></div>
+      <div class="seg"><button id="thDark" class="on" onclick="setTheme('dark')" data-i18n="dark">Dark</button><button id="thLight" onclick="setTheme('light')" data-i18n="light">Light</button></div></div>
+    <div class="row"><div><div class="lbl" data-i18n="language">Language</div></div>
+      <div class="seg"><button id="sgEn" class="on" onclick="setLang('en')">EN</button><button id="sgAr" onclick="setLang('ar')">ع</button></div></div>
+    <div class="row"><div><div class="lbl" data-i18n="advanced">Backend URL</div><div class="sub" data-i18n="advancedSub">Blank = same site</div></div>
+      <input class="field-in" id="fUrl" type="text" placeholder="https://…"></div>
+    <button class="signout" onclick="signOut()" data-i18n="signOut">Sign out</button>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+/* Firebase web config comes from firebase-config.js (shared with the
+   dashboard - one paste point). */
+const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulator: false };
+try {
+  if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || FIREBASE_CONFIG.useEmulator) {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
+    const { getAuth, signInWithEmailAndPassword, signOut, connectAuthEmulator } =
+      await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
+    const app = initializeApp(FIREBASE_CONFIG.useEmulator
+      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
+      : FIREBASE_CONFIG);
+    const auth = getAuth(app);
+    if (FIREBASE_CONFIG.useEmulator) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    window.__mirsalFirebase = {
+      async signIn(email, password) {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        return cred.user.getIdToken();
+      },
+      async getToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; },
+      signOut() { return signOut(auth); },
+    };
+  }
+} catch (err) { console.warn("Firebase init failed:", err); }
+</script>
+
+<script>
+/* ============================ CONFIG ============================ */
+const CONFIG = { BACKEND_URL: "" };   // "" = same origin, or "https://your-platform-backend"
+/* Developer preview only: lets you view the app UI in a static file with no
+   backend and no Firebase config. MUST stay false in production. */
+const LOCAL_PREVIEW = false;
+/* =============================================================== */
+
+let LANG="en", THEME="dark", MODE="run", SESSION=null;
+
+const I18N={
+  en:{tag:"FiveM control",title:"How can I help your server?",
+    sub:"Talk or type — Run executes in-game, Ask just answers.",
+    qaLabel:"Quick commands",phRun:"Type a command…",phAsk:"Ask about your server…",
+    note:"Run commands are in-game only — from a fixed, approved list.",
+    setTitle:"Settings",theme:"Theme",dark:"Dark",light:"Light",language:"Language",
+    advanced:"Backend URL",advancedSub:"Blank = same site",signOut:"Sign out",
+    signInTo:"Sign in to Mirsal",signInSub:"Control your FiveM server by voice or text.",
+    email:"Email",password:"Password",signInBtn:"Sign in",
+    modeRun:"Run",modeAsk:"Ask",answer:"Answer",
+    ok:"Connected",off:"Offline",locked:"Plan inactive",
+    stQueued:"Sent to server",stNone:"Didn’t catch that",stAuth:"Session expired — sign in",
+    stOff:"Couldn’t reach server",stLocked:"Subscription inactive — renew to continue",
+    micUnsupported:"Voice isn’t supported in this browser",
+    badCreds:"Wrong email or password.",netErr:"Couldn’t reach the server."},
+  ar:{tag:"تحكّم FiveM",title:"كيف أخدم سيرفرك؟",
+    sub:"تكلّم أو اكتب — «تنفيذ» ينفّذ داخل اللعبة، «سؤال» يجيب فقط.",
+    qaLabel:"أوامر سريعة",phRun:"اكتب أمرًا…",phAsk:"اسأل عن سيرفرك…",
+    note:"أوامر التنفيذ داخل اللعبة فقط — من قائمة معتمدة.",
+    setTitle:"الإعدادات",theme:"المظهر",dark:"داكن",light:"فاتح",language:"اللغة",
+    advanced:"رابط الـBackend",advancedSub:"فارغ = نفس الموقع",signOut:"تسجيل الخروج",
+    signInTo:"تسجيل الدخول إلى Mirsal",signInSub:"تحكّم بسيرفرك بالصوت أو النص.",
+    email:"البريد الإلكتروني",password:"كلمة المرور",signInBtn:"دخول",
+    modeRun:"تنفيذ",modeAsk:"سؤال",answer:"إجابة",
+    ok:"متصل",off:"غير متصل",locked:"الاشتراك موقوف",
+    stQueued:"أُرسل للسيرفر",stNone:"ما فهمت الطلب",stAuth:"انتهت الجلسة — سجّل الدخول",
+    stOff:"تعذّر الوصول للسيرفر",stLocked:"الاشتراك غير مفعّل — جدّد للاستمرار",
+    micUnsupported:"الصوت غير مدعوم في هذا المتصفح",
+    badCreds:"بريد أو كلمة مرور غير صحيحة.",netErr:"تعذّر الوصول للسيرفر."}
+};
+const ACTIONS={spawn_vehicle:{en:"Vehicle",ar:"مركبة",c:"lime"},set_weather:{en:"Weather",ar:"الطقس",c:"violet"},
+  set_time:{en:"Time",ar:"الوقت",c:"pink"},heal_player:{en:"Heal",ar:"علاج",c:"lime"},
+  spawn_npc:{en:"NPCs",ar:"شخصيات",c:"violet"},repair_vehicle:{en:"Repair",ar:"إصلاح",c:"pink"},
+  none:{en:"Unrecognized",ar:"غير معروف",c:"dim"}};
+const QUICK=[
+ {a:"spawn_vehicle",c:"lime",en:"Spawn vehicle",ar:"مركبة",cmdEn:"spawn a police car",cmdAr:"أعطني سيارة شرطة",
+  svg:'<path d="M3 13l2-5a2 2 0 012-1h6a2 2 0 012 1l2 5M5 13h14v4H5v-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="8" cy="17" r="1.4" fill="currentColor"/><circle cx="16" cy="17" r="1.4" fill="currentColor"/>'},
+ {a:"set_weather",c:"violet",en:"Weather",ar:"الطقس",cmdEn:"make it rain",cmdAr:"خلها تمطر",
+  svg:'<path d="M7 15a4 4 0 011-7.9A5 5 0 0117 9a3.5 3.5 0 01-.5 6.9H7z" stroke="currentColor" stroke-width="1.5"/><path d="M9 18l-1 2M13 18l-1 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
+ {a:"set_time",c:"pink",en:"Set time",ar:"الوقت",cmdEn:"set time to night",cmdAr:"خلي الوقت ليل",
+  svg:'<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'},
+ {a:"heal_player",c:"lime",en:"Heal",ar:"علاج",cmdEn:"heal me",cmdAr:"عالجني",
+  svg:'<path d="M12 20s-7-4.3-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.7-7 9-7 9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'},
+ {a:"spawn_npc",c:"violet",en:"Spawn NPCs",ar:"شخصيات",cmdEn:"spawn 3 people",cmdAr:"نزّل 3 أشخاص",
+  svg:'<circle cx="9" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="9" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 19c0-3 2.2-5 5-5s5 2 5 5M15 14c2.5 0 4 1.8 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'},
+ {a:"repair_vehicle",c:"pink",en:"Repair",ar:"إصلاح",cmdEn:"repair my car",cmdAr:"صلّح سيارتي",
+  svg:'<path d="M14.5 6.5a3.5 3.5 0 00-4.6 4.6l-5 5a1.5 1.5 0 002.1 2.1l5-5a3.5 3.5 0 004.6-4.6l-2 2-1.6-1.6 1.5-2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'}
+];
+const $=id=>document.getElementById(id);
+const t=k=>I18N[LANG][k];
+const SUN='<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const MOON='<svg viewBox="0 0 24 24" fill="none"><path d="M20 14a8 8 0 01-10-10 8 8 0 1010 10z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+
+function setTheme(th){THEME=th;document.documentElement.dataset.theme=th;$("themeBtn").innerHTML=th==="dark"?MOON:SUN;
+  $("thDark").classList.toggle("on",th==="dark");$("thLight").classList.toggle("on",th==="light");}
+function toggleTheme(){setTheme(THEME==="dark"?"light":"dark");}
+function setMode(m){MODE=m;document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  $("cmd").placeholder=t(m==="ask"?"phAsk":"phRun");$("send").classList.toggle("ask",m==="ask");}
+function setLang(l){LANG=l;document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";
+  $("langEn").classList.toggle("on",l==="en");$("langAr").classList.toggle("on",l==="ar");
+  $("sgEn").classList.toggle("on",l==="en");$("sgAr").classList.toggle("on",l==="ar");
+  document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>el.placeholder=t(el.dataset.i18nPh));
+  document.querySelectorAll("[data-qa]").forEach(el=>el.textContent=QUICK[el.dataset.qa][LANG]);
+  $("cmd").placeholder=t(MODE==="ask"?"phAsk":"phRun");refreshStatus();}
+
+function refreshStatus(state){const s=$("status");const cur=state||s.dataset.state;s.dataset.state=cur;
+  $("statusTxt").textContent=t(cur)||t("off");if(SESSION&&SESSION.tenantName)$("tenantTag").textContent=SESSION.tenantName;}
+
+async function signIn(){
+  const email=$("liEmail").value.trim(),pass=$("liPass").value;$("liErr").textContent="";
+  if(!email||!pass){$("liErr").textContent=t("badCreds");return;}
+  const fb=window.__mirsalFirebase;
+  if(!fb){ // Firebase not configured on this copy of the app
+    if(LOCAL_PREVIEW){SESSION={token:"preview",tenantName:email.split("@")[0]||"My server",active:true};enterApp();}
+    else $("liErr").textContent=t("netErr");
+    return;
+  }
+  try{
+    const token=await fb.signIn(email,pass);
+    let name=email.split("@")[0]||"My server",active=false;
+    try{
+      const res=await fetch((CONFIG.BACKEND_URL||"")+"/api/tenant/me",{headers:{"Authorization":"Bearer "+token}});
+      if(res.ok){const d=await res.json();if(d.tenant){name=d.tenant.name||name;active=!!d.tenant.active;}}
+    }catch(e){}
+    SESSION={token,tenantName:name,active};
+    enterApp();
+  }catch(e){
+    $("liErr").textContent=(e&&e.code==="auth/network-request-failed")?t("netErr"):t("badCreds");
+  }
+}
+function enterApp(){$("login").classList.add("hide");refreshStatus(SESSION.active?"ok":"locked");}
+function signOut(){if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+  SESSION=null;closeSheet();$("login").classList.remove("hide");$("feed").innerHTML="";$("hero").classList.remove("min");refreshStatus("off");}
+
+function openSheet(){$("fUrl").value=CONFIG.BACKEND_URL;$("backdrop").classList.add("show");$("sheet").classList.add("show");}
+function closeSheet(){$("backdrop").classList.remove("show");$("sheet").classList.remove("show");CONFIG.BACKEND_URL=$("fUrl").value.trim();}
+
+function renderQuick(){$("qa").innerHTML=QUICK.map((q,i)=>`
+  <button onclick="quick(${i})"><span class="qi ${q.c}"><svg viewBox="0 0 24 24" fill="none">${q.svg}</svg></span><span data-qa="${i}">${q[LANG]}</span></button>`).join("");}
+function quick(i){setMode("run");send(LANG==="ar"?QUICK[i].cmdAr:QUICK[i].cmdEn);}
+
+function scrollDown(){const m=$("main");m.scrollTop=m.scrollHeight;}
+function addUser(text){$("hero").classList.add("min");
+  const g=document.createElement("div");g.className="group";
+  g.innerHTML=`<div class="msg user${MODE==="ask"?" ask":""}"></div><div class="msg bot"><div class="typing"><i></i><i></i><i></i></div></div>`;
+  g.querySelector(".msg.user").textContent=text;$("feed").appendChild(g);scrollDown();
+  return g.querySelector(".msg.bot");}
+function fillRun(bot,{action,message,status}){const act=ACTIONS[action]||ACTIONS.none;
+  const chip={queued:{cls:"",key:"stQueued"},none:{cls:"dim",key:"stNone"},auth:{cls:"err",key:"stAuth"},
+    off:{cls:"warn",key:"stOff"},locked:{cls:"err",key:"stLocked"}}[status]||{cls:"",key:"stQueued"};
+  bot.innerHTML=`<span class="badge ${act.c}">${act[LANG]}</span><div class="txt"></div><div class="status-chip ${chip.cls}"><span class="d"></span>${t(chip.key)}</div>`;
+  bot.querySelector(".txt").textContent=message;scrollDown();}
+function fillAsk(bot,text){bot.innerHTML=`<span class="badge violet">${t("answer")}</span><div class="txt"></div>`;bot.querySelector(".txt").textContent=text;scrollDown();}
+
+async function send(preset){
+  const input=$("cmd");const text=(preset!==undefined?preset:input.value).trim();if(!text)return;
+  input.value="";const bot=addUser(text);const mode=MODE;
+  if(SESSION&&!SESSION.active)return fillRun(bot,{action:"none",message:t("stLocked"),status:"locked"});
+  if(LOCAL_PREVIEW&&!CONFIG.BACKEND_URL&&(!SESSION||SESSION.token==="preview"))
+    return setTimeout(()=>{mode==="ask"?fillAsk(bot,previewAsk()):fillRun(bot,previewRun(text));},550);
+  try{
+    const token=window.__mirsalFirebase?await window.__mirsalFirebase.getToken():(SESSION?SESSION.token:"");
+    const res=await fetch((CONFIG.BACKEND_URL||"")+"/api/command",{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||"")},
+      body:JSON.stringify({text,mode})});
+    if(res.status===401)return fillRun(bot,{action:"none",message:t("stAuth"),status:"auth"});
+    if(res.status===402)return fillRun(bot,{action:"none",message:t("stLocked"),status:"locked"});
+    const data=await res.json();refreshStatus("ok");
+    if(mode==="ask")fillAsk(bot,data.reply||"");
+    else fillRun(bot,{action:data.action||"none",message:data.message||"",status:data.action==="none"?"none":(data.queued?"queued":"none")});
+  }catch(e){refreshStatus("off");fillRun(bot,{action:"none",message:t("stOff"),status:"off"});}
+}
+
+function classify(s){s=s.toLowerCase();const h=(...w)=>w.some(x=>s.includes(x));
+  if(h("car","vehicle","police","سيار","مركب","شرط"))return"spawn_vehicle";
+  if(h("rain","snow","weather","fog","storm","مطر","ثلج","طقس","ضباب"))return"set_weather";
+  if(h("time","night","day","noon","hour","وقت","ليل","نهار","ساعة"))return"set_time";
+  if(h("heal","health","revive","علاج","صحة","اشف"))return"heal_player";
+  if(h("people","npc","ped","ناس","اشخاص","شخصيات"))return"spawn_npc";
+  if(h("repair","fix","صلح","اصلح","تصليح"))return"repair_vehicle";return"none";}
+function previewRun(text){const a=classify(text);
+  const m={spawn_vehicle:{en:"On it — a vehicle is on the way.",ar:"تم — المركبة في الطريق."},
+    set_weather:{en:"Weather updated in-game.",ar:"تم تغيير الطقس داخل اللعبة."},
+    set_time:{en:"Time set on the server.",ar:"تم ضبط الوقت في السيرفر."},
+    heal_player:{en:"You’re healed up.",ar:"تم علاجك بالكامل."},
+    spawn_npc:{en:"Spawning people near you.",ar:"يتم إنزال أشخاص بقربك."},
+    repair_vehicle:{en:"Your vehicle is repaired.",ar:"تم إصلاح مركبتك."},
+    none:{en:"That’s not one of the in-game commands.",ar:"هذا ليس ضمن الأوامر داخل اللعبة."}}[a][LANG];
+  return{action:a,message:m,status:a==="none"?"none":"queued"};}
+function previewAsk(){return LANG==="ar"
+  ?"في وضع «تنفيذ» أقدر أنزّل مركبات، أغيّر الطقس والوقت، أعالج، أنزّل شخصيات، وأصلّح المركبات. بدّل إلى «تنفيذ» لأنفّذها."
+  :"In Run mode I can spawn vehicles, change weather and time, heal, spawn NPCs, and repair vehicles. Switch to Run to make it happen.";}
+
+let recog=null,listening=false;
+function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){$("mic").style.opacity=".4";$("mic").onclick=()=>alert(t("micUnsupported"));return;}
+  recog=new SR();recog.interimResults=false;recog.maxAlternatives=1;
+  recog.onresult=e=>{const txt=e.results[0][0].transcript;$("cmd").value=txt;send(txt);};
+  recog.onend=()=>{listening=false;$("mic").classList.remove("on");document.querySelectorAll(".orb-wrap").forEach(o=>o.classList.remove("listening"));};
+  recog.onerror=recog.onend;}
+function toggleMic(){if(!recog)return;if(listening){recog.stop();return;}
+  recog.lang=LANG==="ar"?"ar-AE":"en-US";
+  try{recog.start();listening=true;$("mic").classList.add("on");document.querySelector(".hero .orb-wrap").classList.add("listening");}catch(e){}}
+
+renderQuick();setTheme("dark");setLang("en");setMode("run");refreshStatus("off");initVoice();
+</script>
+</body>
+</html>

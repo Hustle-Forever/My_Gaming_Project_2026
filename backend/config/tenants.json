@@ -1,0 +1,8 @@
+{
+  "demo": {
+    "id": "demo",
+    "bridgeTokenEnv": "DEMO_BRIDGE_TOKEN",
+    "apiKeyEnv": "DEMO_ANTHROPIC_API_KEY",
+    "allowedActions": ["spawn_vehicle", "set_weather", "set_time", "heal_player", "spawn_npc", "repair_vehicle"]
+  }
+}

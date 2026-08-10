@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.vercel/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*.log
+
+# Firebase Admin service-account keys - NEVER commit these.
+# (covers the console's default download name and common renames)
+*firebase-adminsdk*.json
+service-account*.json
+serviceAccount*.json
+*.service-account.json
