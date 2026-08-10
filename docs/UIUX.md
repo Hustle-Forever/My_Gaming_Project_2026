@@ -30,11 +30,11 @@ Theme = `data-theme` on `<html>` (dark default; explicit toggle). **Theme + lang
 
 ## The orb (signature — two tiers)
 
-**WebGL tier** (`app/fx.js`, vanilla ports of React Bits' Orb + RippleGrid — no deps, CSP-safe): the site hero runs a large ring-orb (`min(92vw,560px)`) behind the headline with hover distortion + rotation, over a lime **ripple grid** background (mouse-reactive, vignetted, theme-aware color/opacity); the **listening overlay** runs a voice-reactive orb — mic level drives the shader's distortion + spin (`setLevel`), always dark-style so it composites transparently on the blurred backdrop. One effect per place: WebGL *replaces* the CSS orb/halo/ring where it mounts, never stacks on it. Skipped under `prefers-reduced-motion`/no-WebGL → CSS fallbacks (`.heroorb.nofx` ring; overlay keeps the CSS orb+halo+ring).
+**WebGL tier** (`app/fx.js`, vanilla ports of React Bits' Orb + RippleGrid — no deps, CSP-safe): the **site hero background** is a full-bleed lime **ripple grid** — subtle ("small visible"), mouse-reactive, theme-aware color/opacity; port extensions for full-bleed use: soft exponential vignette (upstream hard-clips past half-width) and `fadeDistance:0` = no center-spotlight fade. The **listening overlay** runs the voice-reactive **orb** — mic level drives the shader's distortion + spin (`setLevel`), always dark-style so it composites transparently on the blurred backdrop; it *replaces* the CSS orb/halo/ring there, never stacks. Placement rule from the owner: orb = voice only; grid = hero only; never two effects in one place. Skipped under `prefers-reduced-motion`/no-WebGL → CSS fallbacks everywhere.
 
 **CSS tier** (everywhere else): layered radial gradients on a circle, 15 s spin, counter-spinning highlight via `::after` with `mix-blend-mode:screen`:
 `radial-gradient(60% 55% at 32% 30%, #7FE9EE …), (72% 32%, #C7A3FF), (66% 74%, #F3A5C6), (30% 72%, #C4F042), #0f1219` + `blur(1px) saturate(1.2)`.
-Appears: auth screens (78px), console hero (104→44px when chatting), dashboard boot spinner (64px). The favicon is the same gradient as an SVG data-URI — keep it identical on every page.
+Appears: site hero (112px), auth screens (78px), console hero (104→44px when chatting), dashboard boot spinner (64px). The favicon is the same gradient as an SVG data-URI — keep it identical on every page.
 
 ## Component inventory
 

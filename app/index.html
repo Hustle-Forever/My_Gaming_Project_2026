@@ -70,16 +70,12 @@ a{color:inherit;text-decoration:none}
 .icb svg{width:16px;height:16px}
 
 /* hero */
-.hero{position:relative;text-align:center;padding:92px 20px 86px;overflow:hidden}
-/* WebGL layers: the big orb rings the hero headline; the ripple grid lives
-   in its own section (pricing) - one effect per place */
+.hero{position:relative;text-align:center;padding:64px 20px 58px;overflow:hidden}
+/* WebGL: subtle full-bleed ripple grid as the hero background (the orb
+   effect belongs to the voice overlay only) */
 .secgrid{position:absolute;inset:0;z-index:0;pointer-events:none}
 .secgrid canvas{width:100%;height:100%;display:block}
-#pricing{position:relative}
-#pricing>*:not(.secgrid){position:relative;z-index:1}
-.heroorb{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:min(92vw,560px);aspect-ratio:1;z-index:-1;pointer-events:none}
-.heroorb canvas{width:100%;height:100%;display:block}
-.heroorb.nofx{border-radius:50%;background:radial-gradient(closest-side,transparent 60%,rgba(169,139,251,.30) 71%,rgba(127,233,238,.20) 77%,transparent 83%);filter:blur(2px)}
+.hero .orb-wrap{width:112px;height:112px;margin:0 auto 24px}
 .hero-in{position:relative;z-index:1}
 .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;color:var(--dim);margin-bottom:18px}
 .pill .p{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:pu 2s infinite}
@@ -345,8 +341,9 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 </div></nav>
 
 <header class="hero">
+  <div class="secgrid" id="heroGrid"></div>
   <div class="hero-in">
-    <div class="heroorb" id="heroOrb"></div>
+    <div class="orb-wrap"><div class="orb"></div></div>
     <div class="pill"><span class="p"></span>Now live for FiveM servers</div>
     <h1>Your server,<br><span class="grad">on command.</span></h1>
     <p class="sub">Speak or type in Arabic or English — M2 runs it inside your FiveM server instantly. No commands to memorize, no scripts to hunt for.</p>
@@ -429,7 +426,6 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 </section>
 
 <section id="pricing" class="wrap">
-  <div class="secgrid" id="pricingGrid"></div>
   <div class="eyebrow reveal">Pricing</div>
   <h2 class="reveal">Simple plans for every server</h2>
   <p class="lead reveal">Start free. Upgrade when your city grows.</p>
@@ -657,8 +653,7 @@ const bars=[...document.querySelectorAll("#wave i")];
 function themeBg(){return THEME==="dark"?"#0A0B0E":"#F4F5F2";}
 function setTheme(x){THEME=x;document.documentElement.dataset.theme=x;$("thBtn").innerHTML=x==="dark"?MOON:SUN;
  $("sD").classList.toggle("on",x==="dark");$("sL").classList.toggle("on",x==="light");
- if(FXS.grid){FXS.grid.setColor(x==="dark"?"#C4F042":"#8FBE18");FXS.grid.setOpacity(x==="dark"?.38:.25);}
- if(FXS.hero)FXS.hero.setBackground(themeBg());}
+ if(FXS.grid){FXS.grid.setColor(x==="dark"?"#C4F042":"#8FBE18");FXS.grid.setOpacity(x==="dark"?.3:.2);}}
 function toggleTheme(){setTheme(THEME==="dark"?"light":"dark");}
 function setMode(m){MODE=m;document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
  $("cmd").placeholder=t(m==="ask"?"phAsk":"phRun");$("snd").classList.toggle("ask",m==="ask");}
@@ -892,24 +887,20 @@ document.querySelectorAll(".reveal").forEach(e=>io.observe(e));
 /* WebGL effects (fx.js): hero ring-orb + ripple grid, and the voice-reactive
    listening orb. Reduced-motion or no-WebGL falls back to CSS. */
 function initFX(){
- const fallback=()=>{const o=$("heroOrb");if(o)o.classList.add("nofx");};
- if(!window.M2FX||M2FX.reduced)return fallback();
+ if(!window.M2FX||M2FX.reduced)return; // CSS fallbacks stay in place everywhere
  try{
-  const hero=document.querySelector(".hero");
-  if($("heroOrb"))FXS.hero=M2FX.orb($("heroOrb"),{hue:0,hoverIntensity:.45,rotateOnHover:true,
-   background:themeBg(),eventTarget:hero});
-  if($("pricingGrid"))FXS.grid=M2FX.grid($("pricingGrid"),{gridColor:"#C4F042",rippleIntensity:.05,gridSize:12,
-   gridThickness:28,vignetteStrength:2.6,glowIntensity:.1,opacity:.38,mouseInteraction:true,
-   mouseInteractionRadius:1.2,eventTarget:document.getElementById("pricing")});
-  /* The WebGL orb REPLACES the CSS orb + halo + ring in the listening
+  /* Hero background: the stripe/ripple grid, full-bleed and barely-there. */
+  if($("heroGrid"))FXS.grid=M2FX.grid($("heroGrid"),{gridColor:"#C4F042",rippleIntensity:.05,gridSize:12,
+   gridThickness:28,fadeDistance:0,vignetteStrength:2.2,glowIntensity:.08,opacity:.32,mouseInteraction:true,
+   mouseInteractionRadius:1.2,eventTarget:document.querySelector(".hero")});
+  /* The voice orb: REPLACES the CSS orb + halo + ring in the listening
      overlay - one effect, not layers. Always dark-style: a light shader
      background paints an opaque square that can't match the blurred
      backdrop; dark composites to true transparency in both themes. */
   const lw=$("lisOrb");
   if(lw){lw.innerHTML="";const c=document.createElement("div");c.style.cssText="position:absolute;inset:0";
    lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.7,rotateOnHover:true,background:"#0A0B0E"});}
-  if(!FXS.hero)fallback();
- }catch(e){console.warn("fx init failed:",e);fallback();}
+ }catch(e){console.warn("fx init failed:",e);}
 }
 
 renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();bootSession();initFX();

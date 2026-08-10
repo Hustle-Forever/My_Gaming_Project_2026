@@ -380,12 +380,18 @@
         color += glowIntensity * exp(-gridThickness * 0.5 * smoothB.y);
       }
 
-      float ddd = exp(-2.0 * clamp(pow(dist, fadeDistance), 0.0, 1.0));
+      // fadeDistance <= 0 disables the center-spotlight fade entirely
+      // (port extension): a full-bleed background grid wants even coverage,
+      // with only the vignette shaping the edges.
+      float ddd = fadeDistance > 0.0 ? exp(-2.0 * clamp(pow(dist, fadeDistance), 0.0, 1.0)) : 1.0;
 
       vec2 vignetteCoords = vUv - 0.5;
       float vignetteDistance = length(vignetteCoords);
-      float vignette = 1.0 - pow(vignetteDistance * 2.0, vignetteStrength);
-      vignette = clamp(vignette, 0.0, 1.0);
+      // Softened vs upstream (1.0 - pow(d*2, strength), clamped): that clips
+      // to ZERO past half the container width, so a wide full-bleed hero
+      // could never show the grid at its edges. Exponential falloff keeps
+      // the same center-weighted look without ever hard-clipping.
+      float vignette = exp(-pow(vignetteDistance * 2.0, vignetteStrength));
 
       vec3 t;
       if (enableRainbow) {
