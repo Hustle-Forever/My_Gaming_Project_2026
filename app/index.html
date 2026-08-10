@@ -70,22 +70,20 @@ a{color:inherit;text-decoration:none}
 .icb svg{width:16px;height:16px}
 
 /* hero */
-.hero{position:relative;text-align:center;padding:60px 20px 54px;overflow:hidden}
-.aur{position:absolute;inset:-25% -10% auto -10%;height:130%;filter:blur(72px);opacity:.42;pointer-events:none}
-.aur span{position:absolute;border-radius:50%}
-.aur .a1{width:340px;height:340px;background:#5C8FE6;top:-60px;left:5%;animation:d1 16s ease-in-out infinite}
-.aur .a2{width:300px;height:300px;background:#8A5CE6;top:-20px;right:4%;animation:d2 19s ease-in-out infinite}
-.aur .a3{width:260px;height:260px;background:#4FB79A;top:130px;left:40%;animation:d1 23s ease-in-out infinite reverse}
-@keyframes d1{0%,100%{transform:translate(0,0)}50%{transform:translate(26px,22px)}}
-@keyframes d2{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,18px)}}
+.hero{position:relative;text-align:center;padding:92px 20px 86px;overflow:hidden}
+/* WebGL layers: ripple grid washes the whole hero, the big orb rings the headline */
+.herogrid{position:absolute;inset:0;z-index:0;pointer-events:none}
+.herogrid canvas{width:100%;height:100%;display:block}
+.heroorb{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:min(92vw,560px);aspect-ratio:1;z-index:-1;pointer-events:none}
+.heroorb canvas{width:100%;height:100%;display:block}
+.heroorb.nofx{border-radius:50%;background:radial-gradient(closest-side,transparent 60%,rgba(169,139,251,.30) 71%,rgba(127,233,238,.20) 77%,transparent 83%);filter:blur(2px)}
 .hero-in{position:relative;z-index:1}
-.hero .orb-wrap{width:112px;height:112px;margin:0 auto 24px}
 .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;color:var(--dim);margin-bottom:18px}
 .pill .p{width:7px;height:7px;border-radius:50%;background:var(--lime);animation:pu 2s infinite}
 @keyframes pu{0%{box-shadow:0 0 0 0 rgba(196,240,66,.5)}70%{box-shadow:0 0 0 8px rgba(196,240,66,0)}100%{box-shadow:0 0 0 0 rgba(196,240,66,0)}}
 .hero h1{font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:-1.6px;line-height:1.05}
 @media (min-width:700px){.hero h1{font-size:62px;letter-spacing:-2.4px}}
-.hero .sub{font-size:17px;color:var(--dim);margin:16px auto 0;max-width:520px}
+.hero .sub{font-size:17px;color:var(--dim);margin:16px auto 0;max-width:520px;text-shadow:0 0 14px var(--bg),0 0 30px var(--bg)}
 .hero .cta{display:flex;gap:11px;justify-content:center;margin-top:26px;flex-wrap:wrap}
 .trust{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:24px;font-size:12px;color:var(--faint)}
 .trust span{border:1px solid var(--line);border-radius:8px;padding:5px 11px;background:var(--surface)}
@@ -344,9 +342,9 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 </div></nav>
 
 <header class="hero">
-  <div class="aur"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+  <div class="herogrid" id="heroGrid"></div>
   <div class="hero-in">
-    <div class="orb-wrap"><div class="orb"></div></div>
+    <div class="heroorb" id="heroOrb"></div>
     <div class="pill"><span class="p"></span>Now live for FiveM servers</div>
     <h1>Your server,<br><span class="grad">on command.</span></h1>
     <p class="sub">Speak or type in Arabic or English — M2 runs it inside your FiveM server instantly. No commands to memorize, no scripts to hunt for.</p>
@@ -553,6 +551,7 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 </div></div>
 
 <script src="firebase-config.js"></script>
+<script src="fx.js"></script>
 <script type="module">
 /* Firebase Auth wiring — reads the public web config from firebase-config.js
    (shared with dashboard.html). Exposes window.__mirsalFirebase for the
@@ -595,6 +594,7 @@ try {
 <script>
 const CONFIG={BACKEND_URL:""};
 const LOCAL_PREVIEW=false;             // production: uses the real backend + Firebase Auth
+const FXS={};                          // WebGL instances (hero orb, hero grid, listening orb)
 let LANG="en",THEME="dark",MODE="run",SESSION=null,AUTHTAB="signup";
 
 const I18N={
@@ -651,8 +651,11 @@ const MOON='<svg viewBox="0 0 24 24" fill="none"><path d="M20 14a8 8 0 01-10-10 
 const NB=26;(function(){let h="";for(let i=0;i<NB;i++)h+="<i></i>";$("wave").innerHTML=h;})();
 const bars=[...document.querySelectorAll("#wave i")];
 
+function themeBg(){return THEME==="dark"?"#0A0B0E":"#F4F5F2";}
 function setTheme(x){THEME=x;document.documentElement.dataset.theme=x;$("thBtn").innerHTML=x==="dark"?MOON:SUN;
- $("sD").classList.toggle("on",x==="dark");$("sL").classList.toggle("on",x==="light");}
+ $("sD").classList.toggle("on",x==="dark");$("sL").classList.toggle("on",x==="light");
+ if(FXS.grid){FXS.grid.setColor(x==="dark"?"#C4F042":"#8FBE18");FXS.grid.setOpacity(x==="dark"?.6:.4);}
+ if(FXS.hero)FXS.hero.setBackground(themeBg());}
 function toggleTheme(){setTheme(THEME==="dark"?"light":"dark");}
 function setMode(m){MODE=m;document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
  $("cmd").placeholder=t(m==="ask"?"phAsk":"phRun");$("snd").classList.toggle("ask",m==="ask");}
@@ -862,24 +865,51 @@ async function toggleMic(){
 function anim(){if(!lis||!an)return;
  an.getByteFrequencyData(da);let sum=0;for(let i=0;i<da.length;i++)sum+=da[i];
  const lv=Math.min(1,(sum/da.length)/70);
+ if(FXS.lis)FXS.lis.setLevel(lv*1.6);   // voice level -> orb wave distortion + spin
  $("lisOrb").style.transform="scale("+(1+lv*.16).toFixed(3)+")";
- $("halo").style.opacity=(.25+lv*.75).toFixed(2);$("halo").style.transform="scale("+(.92+lv*.3).toFixed(3)+")";
- $("ring").style.opacity=(.15+lv*.6).toFixed(2);$("ring").style.transform="scale("+(1+lv*.22).toFixed(3)+")";
+ const halo=$("halo"),ring=$("ring"); // only exist in the CSS fallback (no WebGL)
+ if(halo){halo.style.opacity=(.25+lv*.75).toFixed(2);halo.style.transform="scale("+(.92+lv*.3).toFixed(3)+")";}
+ if(ring){ring.style.opacity=(.15+lv*.6).toFixed(2);ring.style.transform="scale("+(1+lv*.22).toFixed(3)+")";}
  const st=Math.floor(da.length/NB);
  for(let i=0;i<NB;i++){let v=0;for(let j=0;j<st;j++)v+=da[i*st+j];v=v/st/255;
   bars[i].style.height=Math.max(4,Math.min(42,4+v*68))+"px";bars[i].style.opacity=(.4+v*.6).toFixed(2);}
  raf=requestAnimationFrame(anim);}
 function stopMic(){lis=false;try{rec&&rec.stop();}catch(e){}
+ if(FXS.lis)FXS.lis.setLevel(0);
  if(raf)cancelAnimationFrame(raf),raf=null;
  if(ms){ms.getTracks().forEach(x=>x.stop());ms=null;}
  if(ac){ac.close().catch(()=>{});ac=null;}an=null;
- $("lis").classList.remove("show");$("lisOrb").style.transform="";$("halo").style.opacity="";$("ring").style.opacity="";
+ $("lis").classList.remove("show");$("lisOrb").style.transform="";
+ if($("halo"))$("halo").style.opacity="";if($("ring"))$("ring").style.opacity="";
  bars.forEach(b=>{b.style.height="4px";b.style.opacity=".55";});}
 
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.1});
 document.querySelectorAll(".reveal").forEach(e=>io.observe(e));
 
-renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();bootSession();
+/* WebGL effects (fx.js): hero ring-orb + ripple grid, and the voice-reactive
+   listening orb. Reduced-motion or no-WebGL falls back to CSS. */
+function initFX(){
+ const fallback=()=>{const o=$("heroOrb");if(o)o.classList.add("nofx");};
+ if(!window.M2FX||M2FX.reduced)return fallback();
+ try{
+  const hero=document.querySelector(".hero");
+  if($("heroGrid"))FXS.grid=M2FX.grid($("heroGrid"),{gridColor:"#C4F042",rippleIntensity:.06,gridSize:10,
+   gridThickness:24,vignetteStrength:3,glowIntensity:.12,opacity:.6,mouseInteraction:true,
+   mouseInteractionRadius:1.2,eventTarget:hero});
+  if($("heroOrb"))FXS.hero=M2FX.orb($("heroOrb"),{hue:0,hoverIntensity:.45,rotateOnHover:true,
+   background:themeBg(),eventTarget:hero});
+  /* The WebGL orb REPLACES the CSS orb + halo + ring in the listening
+     overlay - one effect, not layers. Always dark-style: a light shader
+     background paints an opaque square that can't match the blurred
+     backdrop; dark composites to true transparency in both themes. */
+  const lw=$("lisOrb");
+  if(lw){lw.innerHTML="";const c=document.createElement("div");c.style.cssText="position:absolute;inset:0";
+   lw.appendChild(c);FXS.lis=M2FX.orb(c,{hue:0,hoverIntensity:.7,rotateOnHover:true,background:"#0A0B0E"});}
+  if(!FXS.hero)fallback();
+ }catch(e){console.warn("fx init failed:",e);fallback();}
+}
+
+renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();bootSession();initFX();
 </script>
 </body>
 </html>
