@@ -1,5 +1,7 @@
 # Mirsal — FiveM AI control platform
 
+**🟢 Live showcase:** _after the Vercel import, put your URL here →_ `https://YOUR-PROJECT.vercel.app/docs/` — that link will open the [M2 showcase](docs/index.html) as a real page in a new tab. Until then, GitHub shows the HTML as source code (GitHub never renders HTML files — only a hosting URL does).
+
 A hosted, multi-tenant platform: each customer signs in, connects **their own FiveM server** and **their own AI key**, and controls the game by voice/text in Arabic or English. If their account isn't active, nothing works — `active` is the single pay-gate on every path.
 
 ```
