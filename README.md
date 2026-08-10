@@ -2,7 +2,7 @@
 
 **🟢 Live showcase:** _after the Vercel import, put your URL here →_ `https://YOUR-PROJECT.vercel.app/docs/` — that link will open the [M2 showcase](docs/index.html) as a real page in a new tab. Until then, GitHub shows the HTML as source code (GitHub never renders HTML files — only a hosting URL does).
 
-A hosted, multi-tenant platform: each customer signs in, connects **their own FiveM server** and **their own AI key**, and controls the game by voice/text in Arabic or English. If their account isn't active, nothing works — `active` is the single pay-gate on every path.
+A hosted, multi-tenant platform (branded **M2** in the UI): each customer signs in, connects **their own FiveM server** and **their own AI key**, and controls the game by voice/text in Arabic or English. **Open access today:** signup activates immediately — the `active` pay-gate stays in the code as the dormant Stripe seam and still blocks every path when flipped off.
 
 ```
 Operator app ──(Firebase ID token)──► /api/command (Vercel fn)
@@ -46,14 +46,15 @@ Operator app ──(Firebase ID token)──► /api/command (Vercel fn)
    FIREBASE_PROJECT_ID      = <project id>
    ENCRYPTION_KEY           = <64 hex chars>                          (secret)
    PROVIDER                 = gemini
+   RATE_LIMIT_PER_MIN       = 30            # optional, per-tenant /api/command limit
+   ALLOWED_ORIGIN           =                # optional, ONLY if the app lives on another origin
    ```
 
    Generate the encryption key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-8. Deploy. The app is at `/`, the dashboard at `/dashboard`.
+8. Deploy. The site+console is at `/`, the dashboard at `/dashboard`, the showcase at `/docs/`.
 
-**Per customer:**
-9. They create an account on `/dashboard` (or you run signup for them), paste their **Gemini API key** (aistudio.google.com → API keys), and copy the `server.cfg` lines (backend URL + their bridge token) to their FiveM server.
-10. **You activate them:** `node scripts/activate.js <email>` (with `FIREBASE_SERVICE_ACCOUNT` + `FIREBASE_PROJECT_ID` in `.env`). `--off` deactivates. This is the only thing between free and paid — see the Stripe seam below.
+**Per customer (self-serve, no payment):**
+9. They sign up on `/` or `/dashboard` — the account is **active immediately** — then follow the dashboard's 4-step checklist: paste their **Gemini API key** (aistudio.google.com → API keys), copy the `server.cfg` lines, and run their first command. `node scripts/activate.js <email> --off` still exists to suspend a tenant by hand (the future Stripe switch).
 
 ## FiveM bridge install (customer side)
 
@@ -75,8 +76,10 @@ Everything runs on the **Firebase Emulator Suite**. Requirements: Node 18+, **Ja
 npm install
 cp .env.example .env          # set ENCRYPTION_KEY (any 64 hex chars for local)
 
-npm run smoke:emulator        # THE acceptance test: auth → 402 gate → key encryption
-                              # → interpret → queue → poll → ack → rotation → deactivation
+npm test                      # THE gate: 44 integration tests (auth, pay-gate cycle,
+                              # key custody, interpretation + rogue-provider whitelist
+                              # proof, queue, error envelope, rate limiting)
+npm run smoke:emulator        # the end-to-end story test (15 checks)
 npm run seed:emulator         # just the data layer: seed + read back a tenant
 
 # interactive local stack:
@@ -85,7 +88,7 @@ npm run dev                   # terminal 2: dev server on :3000 (Vercel stand-in
 # set useEmulator: true in app/firebase-config.js, open http://localhost:3000
 ```
 
-`npm run smoke:emulator` needs no keys at all (interpretation falls back to the keyword matcher). Set `TEST_GEMINI_KEY=<real key>` to exercise live Gemini in the same run. Deploy-side testing uses `vercel dev` after `vercel link` if you prefer Vercel's own runner.
+Tests need no keys at all (interpretation falls back to the keyword matcher). Set `TEST_GEMINI_KEY=<real key>` to exercise live Gemini in the smoke run. What the suite proves, file by file: [docs/TESTING.md](docs/TESTING.md).
 
 ## Stripe seam (deliberately not built yet)
 
@@ -93,25 +96,28 @@ The `active` boolean is the **only** thing between free and paid. The seam is re
 
 ## Endpoints
 
+Full contract (request/response shapes, the `{ok:false,error:{code,message}}` envelope, all 10 error codes, headers, CORS policy): **[docs/API.md](docs/API.md)**.
+
 | endpoint | auth | notes |
 |---|---|---|
-| `POST /api/command` | ID token | 402 if inactive; `{text, mode}` → run: `{action, params, queued, message}` / ask: `{reply}` |
-| `GET /api/bridge/poll` | `x-bridge-token` | 402 if inactive; drains queue, marks inflight |
+| `POST /api/command` | ID token | pay-gate 402 · rate limit 429; `{text, mode}` → run: `{action, params, queued, message}` / ask: `{reply}` |
+| `GET /api/bridge/poll` | `x-bridge-token` | 402 if inactive; drains queue, marks inflight, stamps `lastPolledAt` |
 | `POST /api/bridge/ack` | `x-bridge-token` | `{ids:[...]}` → deletes |
-| `POST /api/signup` | — | creates auth user + tenant (`active:false`) |
-| `GET /api/tenant/me` | ID token | tenant status **without** the key |
+| `POST /api/signup` | — | creates auth user + tenant (**`active:true` — open access**) |
+| `GET /api/tenant/me` | ID token | tenant status **without** the key (+ `lastPolledAt`, `firstCommandAt`) |
 | `POST /api/tenant/key` | ID token | encrypts + stores the AI key |
 | `POST /api/tenant/rotate-bridge-token` | ID token | new token, old one dies |
 | `POST /api/stripe/webhook` | — | 501 stub (Stripe seam) |
-| `GET /api/health` | — | `{ok:true}` |
+| `GET /api/health` | — | firestore probe + config booleans, no secrets |
 
 ## Repo layout
 
 ```
 api/          Vercel serverless functions (the platform backend)
-app/          static frontend: index.html (console), dashboard.html, firebase-config.js
-lib/          firebase admin init, firestore accessors, AES-GCM crypto, auth, http helpers
-providers/    gemini.js (forced function calling) · claude.js (stub) · index.js (fallback logic)
+app/          static frontend: index.html (site+console), dashboard.html, firebase-config.js
+lib/          firebase admin init, firestore accessors, AES-GCM crypto, auth, http spine
+providers/    gemini.js (forced function calling) · claude.js (stub) · fake.js (test-only) · index.js
+tests/        the 44-test suite (node:test × Firebase emulators) — docs/TESTING.md
 scripts/      dev-server, seed, activate, smoke-emulator
 fivem-bridge/ the Lua resource customers install
 backend/      the original standalone single-tenant demo (Express + Claude) — still works:

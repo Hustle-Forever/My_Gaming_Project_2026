@@ -10,13 +10,13 @@
 
 ```
 Operator app ──(Firebase ID token)──► /api/command (Vercel fn)
-                                         │ verify token · check tenant active (402)
-                                         │ decrypt tenant key · interpret · validate
+                                         │ verify token · pay-gate (402) · rate limit (429)
+                                         │ decrypt tenant key · interpret · validate (whitelist)
                                          ▼
                                     Firestore queue  ◄──poll/ack── FiveM bridge ──► game
 ```
 
-The bridge only ever makes **outbound** HTTP requests — customers never open ports.
+The bridge only ever makes **outbound** HTTP requests — customers never open ports. Every endpoint rides `lib/http.js endpoint()`: one error envelope, security headers, request-id JSON logs, body caps (contract in [API.md](API.md)).
 
 ## Stack
 
@@ -31,22 +31,24 @@ The bridge only ever makes **outbound** HTTP requests — customers never open p
 ## Repo layout
 
 ```
-api/          serverless functions        lib/        admin init, firestore, crypto, auth, http
-app/          index.html (console), dashboard.html, firebase-config.js
-providers/    gemini.js · claude.js (stub) · index.js (fallback logic)
+api/          serverless functions        lib/        admin init, firestore, crypto, auth, http spine
+app/          index.html (site+console), dashboard.html, firebase-config.js
+providers/    gemini.js · claude.js (stub) · fake.js (test-only rogue simulator) · index.js
+tests/        the suite (node:test × emulators) — see TESTING.md
 scripts/      dev-server · seed · activate · smoke-emulator
 fivem-bridge/ the customer-installed resource
 backend/      original standalone demo (Express + Claude BYOK) — still maintained
-docs/         this documentation + showcase page
+docs/         this documentation + showcase page (served at /docs/)
 ```
 
 ## Commands
 
 ```bash
-npm run smoke:emulator   # THE acceptance test (needs Java for the Firestore emulator)
+npm test                 # THE acceptance gate: 44 tests on the emulators (needs Java ≥11)
+npm run smoke:emulator   # end-to-end story test (15 checks), kept green alongside
 npm run seed:emulator    # data-layer sanity
 npm run emulators        # interactive: Auth + Firestore emulators
-npm run dev              # interactive: dev server on :3000 (Vercel stand-in)
+npm run dev              # interactive: dev server on :3000 (Vercel stand-in, serves /docs/ too)
 node scripts/activate.js <email> [--off]
 cd backend && npm run smoke   # legacy demo acceptance test
 ```
@@ -57,5 +59,7 @@ Env vars: see `.env.example`. Production values live in Vercel project settings 
 
 - Every AI-visible action definition lives in `backend/actions.js` — single source of truth for both products.
 - Any code path that produces an action re-validates through `actions.validateAction` before queueing. No exceptions.
+- New endpoints use `endpoint(methods, handler)` from `lib/http.js` and speak the [API.md](API.md) envelope; new failure modes get a code there first.
+- **TDD:** backend behavior lands as a failing test in `tests/` before the implementation (see [TESTING.md](TESTING.md)).
 - **Docs discipline:** after every change, update the relevant `docs/*.md` and append a dated entry to [DAILY_PROGRESS.md](DAILY_PROGRESS.md) describing what changed and why.
 - Windows note: child-process teardown races libuv on exit — use the exit-safe shutdown pattern from `scripts/smoke-emulator.js` in any new test harness.

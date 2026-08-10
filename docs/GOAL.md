@@ -19,11 +19,13 @@
 - **BYOK** (bring your own AI key): inference costs live with the customer; our costs stay flat per tenant.
 - `scripts/activate.js` still exists to toggle any tenant's `active` flag by hand.
 
-## Status (2026-08-10)
+## Status (2026-08-10, post-polish)
 
-- ✅ Platform built and green: `npm run smoke:emulator` 16/16; full browser E2E on the emulators.
-- ✅ Legacy single-tenant demo (`backend/`) still green: 7/7.
-- ⏳ Awaiting: Firebase console setup (m2-gaming project created; web config wired), Vercel deploy, first real customer activation.
+- ✅ Platform hardened and proven: **`npm test` 44/44** (auth, pay-gate cycle, key custody, interpretation incl. rogue-provider whitelist proof, queue, envelope, rate limiting) + `npm run smoke:emulator` 15/15.
+- ✅ One coherent product surface: marketing site + console (`/`) and the rebuilt owner dashboard (`/dashboard`) share one design system (see [UIUX.md](UIUX.md)); session persistence, translated failure states everywhere, 4-step setup checklist.
+- ✅ Backend: error envelope, security headers/CSP, per-tenant rate limit, request-id logs, `lastPolledAt`/`firstCommandAt` telemetry ([API.md](API.md)).
+- ✅ Legacy single-tenant demo (`backend/`) untouched and green: 7/7.
+- ⏳ Awaiting (human): Vercel deploy + paste Firestore rules in the m2-gaming console; then the first real customer walks the checklist.
 
 ## Roadmap (not built yet, in rough order)
 

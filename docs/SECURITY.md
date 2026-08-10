@@ -35,7 +35,19 @@ The mechanism is intact: `active:false` → **402** on `/api/command` and `/api/
 
 `firestore.rules` = deny all client reads and writes. The API (Admin SDK) is the only data path, so field-level secrets can't leak via queries.
 
+## 6. Request hardening (2026-08-10)
+
+- **One spine:** every endpoint runs through `lib/http.js endpoint()` — uniform error envelope (`{ok:false,error:{code,message}}`, codes in [API.md](API.md)), crash containment (unhandled → 500 `INTERNAL`, never a stack trace to the client).
+- **Headers on every response:** `nosniff`, `X-Frame-Options: DENY`, strict referrer policy, `cache-control: no-store`, `x-request-id`. HTML pages additionally get a CSP (self + inline + gstatic/fonts + Firebase Auth endpoints, `frame-ancestors 'none'`) and a Permissions-Policy limiting mic to self, camera/geolocation off — in `vercel.json` for prod, mirrored by the dev server.
+- **Input caps:** 64 KB body limit (413), command text ≤300 chars, email/password/key length bounds. Oversized streams are aborted mid-read.
+- **Per-tenant rate limit** on `/api/command` (`RATE_LIMIT_PER_MIN`, default 30/min): Firestore transactional fixed window on the tenant doc, so it holds across serverless instances and covers ask mode (provider cost) too. 429 `RATE_LIMITED`.
+- **CORS same-origin by default** — zero `Access-Control-*` headers unless `ALLOWED_ORIGIN` is deliberately set.
+- **Structured logs, no secrets:** single-line JSON with a request id; keys, tokens, and Authorization material never enter `fields`; command text is truncated. Provider errors are logged server-side and never surfaced to clients (suite-verified).
+
+## Proven by tests
+
+`npm test` (44) locks the walls in place: the **rogue-provider test** proves a non-whitelisted action from the AI itself can never be queued (with a live-control test so it can't pass vacuously); the key-leak scan proves no endpoint ever returns key material; the pay-gate cycle proves deactivation gates command + poll while ack settles; the hardening file pins headers, caps, CORS, and the secret-free health check. See [TESTING.md](TESTING.md).
+
 ## Operational notes
 
-- Rate limiting exists in the legacy demo (20/min/IP). The platform currently relies on auth + pay-gate; per-tenant rate limiting is a known TODO before public launch.
 - Known exposure to accept: a pasted GitHub token in chat/command history is treated as burned — use short-lived tokens and revoke after use.

@@ -8,9 +8,11 @@
 
 ## Customers (humans)
 
-1. **Signup** — `POST /api/signup {email, password, name}` creates the Firebase Auth user **and** `tenants/{uid}` (`active:false`) in one step. Duplicate email → 409. Password ≥ 8 chars.
+1. **Signup** — `POST /api/signup {email, password, name}` creates the Firebase Auth user **and** `tenants/{uid}` (**`active:true` — open access, no payment**) in one step. Duplicate email → 409 `EMAIL_TAKEN`. Password 8–128 chars.
 2. **Sign-in** — the pages use the Firebase web SDK (`signInWithEmailAndPassword`); the SDK manages refresh. Every API call fetches a fresh ID token via `getToken()`.
-3. **Verification** — `lib/auth.js → requireUser()` runs `admin.auth().verifyIdToken()` on the `Authorization: Bearer` header. Invalid/missing → 401. The uid **is** the tenant id — no separate mapping to get wrong.
+3. **Session persistence** — the SDK persists the session; each page's module script fires a `mirsal-auth-ready` event after the first `onAuthStateChanged`, and the page routes accordingly: signed-in reload lands in the console/dashboard, signed-out lands on the site/auth screen.
+4. **Expiry handling** — on any 401 the client retries **once** with a force-refreshed token (`getIdToken(true)`); if it still 401s it signs out cleanly and shows a translated "session expired" on the auth screen. The refresh path itself is covered by `tests/auth.test.js`.
+5. **Verification** — `lib/auth.js → requireUser()` runs `admin.auth().verifyIdToken()` on the `Authorization: Bearer` header. Invalid/missing → 401. The uid **is** the tenant id — no separate mapping to get wrong.
 
 ## FiveM servers (bridges)
 
@@ -20,10 +22,12 @@
 
 ## Statuses the clients understand
 
-| code | meaning | UI copy |
+All errors arrive as `{ ok:false, error:{ code, message } }` — the full table lives in [API.md](API.md). The auth-relevant ones:
+
+| HTTP / code | meaning | UI behavior |
 |---|---|---|
-| 401 | bad/missing credential | "session expired — sign in" / bridge log: invalid token |
-| 402 | tenant not active | "subscription inactive" / bridge log: renew plan |
+| 401 `AUTH_REQUIRED` | bad/missing credential | one silent token-refresh retry → sign-out + "session expired — sign in again" / bridge log: invalid token |
+| 402 `PLAN_INACTIVE` | tenant not active | locked pill + "View plan →" link / bridge log: renew plan |
 
 ## Local development
 

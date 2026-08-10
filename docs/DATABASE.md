@@ -17,6 +17,9 @@
 | `providerKeyEnc` | string\|null | customer AI key, AES-256-GCM ciphertext — never plaintext, never sent to any client |
 | `bridgeToken` | string | `brg_` + 48 hex chars; the FiveM resource authenticates with this |
 | `allowedActions` | string[] | per-tenant whitelist subset (default: all six) |
+| `lastPolledAt` | number\|absent | epoch ms of the last bridge poll, **throttled to one write per minute** (a 2.5s-polling bridge would otherwise write 34k times/day). Drives the dashboard "connected / last seen" indicator and checklist step 3 |
+| `firstCommandAt` | number\|absent | epoch ms of the first *queued* command (a `none` doesn't count); permanent once set. Checklist step 4 |
+| `rlWindowStart` / `rlCount` | number | per-tenant fixed-window rate-limit state, updated transactionally on `/api/command` (`RATE_LIMIT_PER_MIN`, default 30). Lives on the doc so limits hold across serverless instances |
 | `createdAt` / `updatedAt` | timestamp | server timestamps |
 
 ## `tenants/{uid}/commands/{cmdId}`

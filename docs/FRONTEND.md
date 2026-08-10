@@ -10,24 +10,23 @@
 
 | page | URL | purpose |
 |---|---|---|
-| `app/index.html` | `/` | **one page, three views:** marketing site (hero, features, live demo, pricing, docs, FAQ) → auth modal (sign up / sign in) → operator console (Run/Ask, quick commands, full-screen voice overlay with live waveform, feed). Views swap client-side; no navigation. |
-| `app/dashboard.html` | `/dashboard` | owner setup: create account, AI key, bridge token + `server.cfg` lines, plan status |
+| `app/index.html` | `/` | **one page, three views:** marketing site (hero, features, live demo, pricing, docs, FAQ) → auth modal (sign up / sign in) → operator console (Run/Ask, quick commands, full-screen voice overlay with live waveform, feed, setup notices). Views swap client-side; a persisted session skips straight to the console on load. |
+| `app/dashboard.html` | `/dashboard` | owner dashboard **in the same design system**: 4-step setup checklist (account / key / server / first command), AI-key card, server card (masked token, `server.cfg` copy, inline rotate confirm, live last-seen), plan card (`#plan` anchor), console + docs links |
 | `app/firebase-config.js` | `/firebase-config.js` | ONE paste point for the public Firebase web config (both pages load it) |
-| `docs/index.html` | `/docs/` | project showcase page |
+| `docs/index.html` | `/docs/` | project showcase page (dev server serves it too) |
 
-`app/index.html` is `LOCAL_PREVIEW=false` (production) — sign-in uses the real backend + Firebase Auth, so it needs the deployed site or `npm run dev`; there is no offline demo mode. Rewrites live in `vercel.json`; `scripts/dev-server.js` mirrors them locally.
-
-Note: `app/app.js`, `app/style.css`, `app/voice.js` are dead leftovers from the earlier standalone console — nothing loads them.
+`app/index.html` is `LOCAL_PREVIEW=false` (production) — sign-in uses the real backend + Firebase Auth, so it needs the deployed site or `npm run dev`; there is no offline demo mode. Rewrites live in `vercel.json` (which also sets the security headers/CSP); `scripts/dev-server.js` mirrors both locally. The old `app/app.js`/`style.css`/`voice.js` leftovers are deleted.
 
 ## Wiring (both pages)
 
-- A `<script type="module">` initializes Firebase Auth from `window.FIREBASE_CONFIG` and exposes `window.__mirsalFirebase = { signIn, getToken, signOut }` to the page's classic script. `useEmulator: true` in the config connects to the Auth emulator (127.0.0.1:9099).
-- **Auth flow (index + dashboard):** sign-up → `POST /api/signup` (creates the Firebase user + tenant) → Firebase `signIn` for the ID token → `GET /api/tenant/me` for name + active. Sign-in → Firebase `signIn` → `/api/tenant/me`. This is the correction to the shipped `index.html`, which originally POSTed to a non-existent `/auth/login` and expected the backend to mint tokens.
-- API calls send `Authorization: Bearer <ID token>` (fetched fresh per call via `getToken()` — auto-refresh included).
-- Console → `POST /api/command` with `{text, mode}`; renders `{action, message, queued}` (Run) or `{reply}` (Ask); 401 → "session expired", 402 → "subscription inactive" (not reached today — see pay-gate note below).
-- Dashboard → `/api/tenant/me`, `/api/tenant/key`, `/api/tenant/rotate-bridge-token`.
+- A `<script type="module">` initializes Firebase Auth from `window.FIREBASE_CONFIG`, exposes `window.__mirsalFirebase = { signIn, getToken(force), signOut }`, and fires **`mirsal-auth-ready`** after the first `onAuthStateChanged` — that's the session-persistence handshake the classic script boots on. `useEmulator: true` connects to the Auth emulator (127.0.0.1:9099).
+- **Auth flow:** sign-up → `POST /api/signup` (creates the Firebase user + tenant, `active:true`) → Firebase `signIn` → `GET /api/tenant/me`. Sign-in → Firebase `signIn` → `/api/tenant/me`.
+- **`authedFetch`** (both pages): fresh ID token per call; on 401 it retries once with a force-refreshed token, then signs out with a translated "session expired".
+- Console: `POST /api/command` renders `{action, message, queued}` (Run) or `{reply}` (Ask); envelope codes drive the chips — 402 locked + "View plan →" (`/dashboard#plan`), 429 "wait a minute", BAD_INPUT vs INTERNAL split; network failure → Offline pill + retry copy. Setup notices (no key / server never polled) link to the dashboard and are dismissible.
+- Dashboard: `/api/tenant/me` (checklist + last-seen), `/api/tenant/key`, `/api/tenant/rotate-bridge-token`; 45s auto-refresh while open; offline → sticky banner with Retry.
 - `LOCAL_PREVIEW` is a UI-preview flag for opening the file with no backend. **`false` in production** — the offline demo path is off.
-- **Pay-gate is open:** new accounts are `active:true` on signup (no payment), so the 402 path isn't hit in normal use. See [SECURITY.md](SECURITY.md) / [GOAL.md](GOAL.md).
+- Theme + language persist in `localStorage` (`m2.theme`, `m2.lang`) across both pages.
+- **Pay-gate is open:** new accounts are `active:true` on signup (no payment); the 402 UI states exist and are E2E-verified for when Stripe re-gates. See [SECURITY.md](SECURITY.md) / [GOAL.md](GOAL.md).
 
 ## Voice
 
