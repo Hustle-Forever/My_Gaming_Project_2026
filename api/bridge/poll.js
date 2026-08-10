@@ -1,21 +1,29 @@
 // GET /api/bridge/poll - the FiveM bridge pulls pending commands.
 // Auth: x-bridge-token. Pay-gate: an inactive tenant's bridge gets 402 and
-// nothing runs.
+// nothing runs. Each poll refreshes tenants/{uid}.lastPolledAt (throttled to
+// one write per minute) so the dashboard can show a live "server connected"
+// indicator without a write on every 2.5s poll.
 const { requireBridgeTenant } = require('../../lib/auth');
-const { drainCommands } = require('../../lib/firestore');
-const { applyCors } = require('../../lib/http');
+const { drainCommands, updateTenant } = require('../../lib/firestore');
+const { endpoint, sendErr } = require('../../lib/http');
 
-module.exports = async (req, res) => {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'method not allowed' });
+const POLL_STAMP_MS = 60_000;
 
+module.exports = endpoint(['GET'], async (req, res, { log }) => {
   const tenant = await requireBridgeTenant(req);
-  if (!tenant) return res.status(401).json({ error: 'invalid bridge token' });
-  if (!tenant.active) return res.status(402).json({ error: 'subscription inactive' });
+  if (!tenant) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid bridge token');
+  if (!tenant.active) return sendErr(res, 402, 'PLAN_INACTIVE', 'subscription inactive');
+
+  const last = tenant.lastPolledAt && typeof tenant.lastPolledAt.toMillis === 'function'
+    ? tenant.lastPolledAt.toMillis()
+    : Number(tenant.lastPolledAt || 0);
+  if (Date.now() - last >= POLL_STAMP_MS) {
+    await updateTenant(tenant.id, { lastPolledAt: Date.now() });
+  }
 
   const commands = await drainCommands(tenant.id);
   if (commands.length) {
-    console.log(`[bridge] ${tenant.id} pulled ${commands.length} command(s): ${commands.map((c) => `${c.id}:${c.action}`).join(', ')}`);
+    log('log', { msg: 'bridge pulled', uid: tenant.id, count: commands.length, actions: commands.map((c) => c.action) });
   }
   res.status(200).json({ commands });
-};
+});

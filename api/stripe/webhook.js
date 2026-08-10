@@ -3,7 +3,10 @@
 // When payments land, this endpoint will: verify the Stripe signature,
 // map the customer to a tenant, and set { active, subscriptionStatus }
 // from subscription events. Nothing else in the codebase changes.
-// Until then activation is manual: node scripts/activate.js <uid-or-email>
-module.exports = async (req, res) => {
-  res.status(501).json({ error: 'payments not wired yet - activation is manual for now' });
-};
+// (Open access today: signup creates active:true; flipping that default
+// back is the only change needed to start charging.)
+const { endpoint, sendErr } = require('../../lib/http');
+
+module.exports = endpoint(['POST', 'GET'], async (req, res) => {
+  return sendErr(res, 501, 'NOT_IMPLEMENTED', 'payments not wired yet - accounts are active on signup');
+});

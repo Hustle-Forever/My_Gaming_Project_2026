@@ -3,17 +3,14 @@
 // and /api/bridge/poll) so in-flight commands can still be acknowledged.
 const { requireBridgeTenant } = require('../../lib/auth');
 const { ackCommands } = require('../../lib/firestore');
-const { readJson, applyCors } = require('../../lib/http');
+const { endpoint, readJson, sendErr } = require('../../lib/http');
 
-module.exports = async (req, res) => {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
-
+module.exports = endpoint(['POST'], async (req, res, { log }) => {
   const tenant = await requireBridgeTenant(req);
-  if (!tenant) return res.status(401).json({ error: 'invalid bridge token' });
+  if (!tenant) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid bridge token');
 
   const body = await readJson(req);
   const acked = await ackCommands(tenant.id, body.ids);
-  if (acked) console.log(`[bridge] ${tenant.id} acked ${acked} command(s)`);
+  if (acked) log('log', { msg: 'bridge acked', uid: tenant.id, count: acked });
   res.status(200).json({ ok: true, acked });
-};
+});

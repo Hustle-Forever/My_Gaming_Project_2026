@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev-server.js",
+    "test": "firebase emulators:exec --only auth,firestore --project demo-mirsal \"node --test tests/*.test.js\"",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-mirsal",
     "seed": "node scripts/seed.js",
     "seed:emulator": "firebase emulators:exec --only firestore --project demo-mirsal \"node scripts/seed.js --verify\"",

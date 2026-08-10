@@ -6,6 +6,8 @@ const claude = require('./claude');
 const { stubInterpret } = require('../lib/stub-interpret');
 
 const PROVIDERS = { gemini, claude };
+// Rogue-AI simulator for the test suite ONLY - see providers/fake.js.
+if (process.env.NODE_ENV === 'test') PROVIDERS.fake = require('./fake');
 const isArabic = (text) => /[؀-ۿ]/.test(String(text));
 
 // Free-form text -> validated whitelisted action (or none).

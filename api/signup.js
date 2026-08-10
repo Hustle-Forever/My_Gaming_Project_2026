@@ -1,24 +1,20 @@
 // POST /api/signup - creates the Firebase Auth user AND the tenants/{uid}
-// doc in one step. New customers start with active:false (locked) until
-// activated - manually for now, by Stripe later.
+// doc in one step.
 const { auth } = require('../lib/firebase');
 const { createTenant } = require('../lib/firestore');
-const { readJson, applyCors } = require('../lib/http');
+const { endpoint, readJson, sendErr } = require('../lib/http');
 
-module.exports = async (req, res) => {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
-
+module.exports = endpoint(['POST'], async (req, res, { log }) => {
   const body = await readJson(req);
   const email = String(body.email || '').trim().toLowerCase();
   const password = String(body.password || '');
   const name = String(body.name || '').trim() || email.split('@')[0] || 'My server';
 
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return res.status(400).json({ error: 'a valid email is required' });
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) {
+    return sendErr(res, 400, 'BAD_INPUT', 'a valid email is required');
   }
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'password must be at least 8 characters' });
+  if (password.length < 8 || password.length > 128) {
+    return sendErr(res, 400, 'BAD_INPUT', 'password must be 8-128 characters');
   }
 
   try {
@@ -27,13 +23,16 @@ module.exports = async (req, res) => {
     // The `active` flag + 402 pay-gate remain in the code as the dormant Stripe
     // seam; flip this back to `active:false` (or let Stripe set it) to charge.
     await createTenant(user.uid, { name, active: true });
-    console.log(`[signup] created tenant ${user.uid} (${email}) - active:true (open access)`);
+    log('log', { msg: 'tenant created', uid: user.uid, active: true });
     return res.status(200).json({ ok: true, uid: user.uid });
   } catch (err) {
     if (err.code === 'auth/email-already-exists') {
-      return res.status(409).json({ error: 'email already registered' });
+      return sendErr(res, 409, 'EMAIL_TAKEN', 'email already registered');
     }
-    console.error(`[signup] ${err.message}`);
-    return res.status(500).json({ error: 'signup failed' });
+    if (err.code === 'auth/invalid-password' || err.code === 'auth/invalid-email') {
+      return sendErr(res, 400, 'BAD_INPUT', 'invalid email or password');
+    }
+    log('error', { msg: 'signup failed', err: err.message });
+    return sendErr(res, 500, 'INTERNAL', 'signup failed');
   }
-};
+});

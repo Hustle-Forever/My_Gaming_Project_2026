@@ -1,7 +1,8 @@
 // scripts/dev-server.js - local stand-in for Vercel. Mounts the /api functions
 // with the same req/res helpers Vercel's Node runtime provides (res.status,
-// res.json, parsed req.query) and serves app/ statically with the same
-// rewrites as vercel.json. Production uses Vercel itself - never this file.
+// res.json, parsed req.query) and serves app/ + docs/ statically with the same
+// rewrites and security headers as vercel.json. Production uses Vercel itself -
+// never this file.
 require('dotenv').config();
 const http = require('http');
 const fs = require('fs');
@@ -9,6 +10,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const APP_DIR = path.join(ROOT, 'app');
+const DOCS_DIR = path.join(ROOT, 'docs');
 const PORT = Number(process.env.PORT || 3000);
 
 // pathname -> module path (lazy require so partially-built milestones still run)
@@ -34,6 +36,30 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
+// Mirrors the `headers` section of vercel.json. The CSP allows exactly what
+// the pages use: inline styles/scripts, the Firebase Auth SDK from gstatic,
+// Google Fonts, and (dev only, harmless in prod) the local Auth emulator.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.gstatic.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src https://fonts.gstatic.com",
+  "img-src 'self' data:",
+  "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com http://127.0.0.1:9099 http://localhost:9099",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+].join('; ');
+
+function staticHeaders(res, isHtml) {
+  res.setHeader('x-content-type-options', 'nosniff');
+  res.setHeader('x-frame-options', 'DENY');
+  res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
+  if (isHtml) {
+    res.setHeader('content-security-policy', CSP);
+    res.setHeader('permissions-policy', 'microphone=(self), camera=(), geolocation=()');
+  }
+}
+
 function enhance(req, res) {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   req.query = Object.fromEntries(url.searchParams);
@@ -48,16 +74,32 @@ function enhance(req, res) {
   return url.pathname;
 }
 
+function sendFile(res, file) {
+  const isHtml = path.extname(file) === '.html';
+  staticHeaders(res, isHtml);
+  res.setHeader('content-type', MIME[path.extname(file)] || 'application/octet-stream');
+  fs.createReadStream(file).pipe(res);
+}
+
 function serveStatic(res, pathname) {
+  // /docs and /docs/* come from the repo's docs/ directory (like Vercel's
+  // root static serving); everything else from app/.
+  if (pathname === '/docs' || pathname === '/docs/') pathname = '/docs/index.html';
+  if (pathname.startsWith('/docs/')) {
+    const file = path.join(DOCS_DIR, path.normalize(pathname.slice('/docs/'.length)).replace(/^([/\\])+/, ''));
+    if (file.startsWith(DOCS_DIR) && fs.existsSync(file) && fs.statSync(file).isFile()) return sendFile(res, file);
+    staticHeaders(res, false);
+    return res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
+  }
   const rewrites = { '/': '/index.html', '/dashboard': '/dashboard.html' };
   const rel = rewrites[pathname] || pathname;
   const file = path.join(APP_DIR, path.normalize(rel).replace(/^([/\\])+/, ''));
   if (!file.startsWith(APP_DIR) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
-    res.status(404).json({ error: 'not found' });
+    staticHeaders(res, false);
+    res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
     return;
   }
-  res.setHeader('content-type', MIME[path.extname(file)] || 'application/octet-stream');
-  fs.createReadStream(file).pipe(res);
+  sendFile(res, file);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -71,12 +113,12 @@ const server = http.createServer(async (req, res) => {
     serveStatic(res, pathname);
   } catch (err) {
     console.error(`[dev-server] ${req.method} ${pathname}: ${err.stack || err.message}`);
-    if (!res.headersSent) res.status(500).json({ error: 'internal error' });
+    if (!res.headersSent) res.status(500).json({ ok: false, error: { code: 'INTERNAL', message: 'internal error' } });
     else res.end();
   }
 });
 
 server.listen(PORT, () => {
-  console.log(`[dev-server] http://localhost:${PORT}  (app UI at /, dashboard at /dashboard)`);
+  console.log(`[dev-server] http://localhost:${PORT}  (site+console at /, dashboard at /dashboard, showcase at /docs/)`);
   console.log(`[dev-server] emulators: firestore=${process.env.FIRESTORE_EMULATOR_HOST || 'NOT SET'} auth=${process.env.FIREBASE_AUTH_EMULATOR_HOST || 'NOT SET'}`);
 });

@@ -1,30 +1,36 @@
 // POST /api/command - the app-facing runtime.
-// Verify ID token -> load tenant -> PAY-GATE (402 if !active) -> ask mode:
-// short text reply / run mode: interpret with the tenant's decrypted key,
-// re-validate against the whitelist, queue for the bridge.
+// Verify ID token -> load tenant -> PAY-GATE (402 if !active) -> per-tenant
+// rate limit (429) -> ask mode: short text reply / run mode: interpret with
+// the tenant's decrypted key, re-validate against the whitelist, queue for
+// the bridge. First successful queue stamps firstCommandAt (setup checklist).
 const actions = require('../backend/actions');
 const { requireUser } = require('../lib/auth');
-const { getTenant, enqueueCommand } = require('../lib/firestore');
+const { getTenant, enqueueCommand, allowCommand, updateTenant } = require('../lib/firestore');
 const { decryptSecret } = require('../lib/crypto');
 const providers = require('../providers');
-const { readJson, applyCors } = require('../lib/http');
+const { endpoint, readJson, sendErr } = require('../lib/http');
 
-module.exports = async (req, res) => {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
+const MAX_TEXT = 300;
 
+module.exports = endpoint(['POST'], async (req, res, { log }) => {
   const user = await requireUser(req);
-  if (!user) return res.status(401).json({ error: 'invalid or missing ID token' });
+  if (!user) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid or missing ID token');
 
   const tenant = await getTenant(user.uid);
-  if (!tenant) return res.status(404).json({ error: 'no tenant for this account' });
-  if (!tenant.active) return res.status(402).json({ error: 'subscription inactive' });
+  if (!tenant) return sendErr(res, 404, 'NOT_FOUND', 'no tenant for this account');
+  if (!tenant.active) return sendErr(res, 402, 'PLAN_INACTIVE', 'subscription inactive');
 
   const body = await readJson(req);
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   const mode = body.mode === 'ask' ? 'ask' : 'run';
-  if (!text || text.length > 300) {
-    return res.status(400).json({ error: 'text must be 1-300 characters' });
+  if (!text || text.length > MAX_TEXT) {
+    return sendErr(res, 400, 'BAD_INPUT', `text must be 1-${MAX_TEXT} characters`);
+  }
+
+  const limit = Number(process.env.RATE_LIMIT_PER_MIN || 30);
+  if (!(await allowCommand(tenant.id, limit))) {
+    log('log', { msg: 'rate limited', uid: tenant.id });
+    return sendErr(res, 429, 'RATE_LIMITED', `rate limit exceeded - max ${limit} commands per minute`);
   }
 
   // Decrypt the tenant's provider key ONLY here, only for this request.
@@ -33,12 +39,13 @@ module.exports = async (req, res) => {
     try {
       apiKey = decryptSecret(tenant.providerKeyEnc);
     } catch (err) {
-      console.error(`[command] key decrypt failed for ${tenant.id}: ${err.message}`);
+      log('error', { msg: 'key decrypt failed', uid: tenant.id, err: err.message });
     }
   }
 
   if (mode === 'ask') {
     const reply = await providers.askText(tenant, apiKey, text);
+    log('log', { msg: 'ask', uid: tenant.id, textLen: text.length });
     return res.status(200).json({ ok: true, reply });
   }
 
@@ -49,7 +56,7 @@ module.exports = async (req, res) => {
   try {
     valid = actions.validateAction(interpreted.action, interpreted.params, tenant.allowedActions);
   } catch (err) {
-    console.warn(`[command] rejected action "${interpreted.action}": ${err.message}`);
+    log('log', { msg: 'action rejected', uid: tenant.id, action: String(interpreted.action).slice(0, 40), err: err.message });
     valid = { action: 'none', params: {} };
   }
 
@@ -58,7 +65,10 @@ module.exports = async (req, res) => {
   }
 
   const cmd = await enqueueCommand(tenant.id, valid.action, valid.params);
-  console.log(`[command] ${tenant.id} "${text}" -> ${cmd.id} ${valid.action} ${JSON.stringify(valid.params)}`);
+  if (!tenant.firstCommandAt) {
+    await updateTenant(tenant.id, { firstCommandAt: Date.now() });
+  }
+  log('log', { msg: 'queued', uid: tenant.id, cmd: cmd.id, action: valid.action, text: text.slice(0, 80) });
   return res.status(200).json({
     ok: true,
     action: valid.action,
@@ -66,4 +76,4 @@ module.exports = async (req, res) => {
     queued: true,
     message: actions.friendlyMessage(valid.action, valid.params),
   });
-};
+});
