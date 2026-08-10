@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0A0B0E">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%237FE9EE'/%3E%3Cstop offset='.55' stop-color='%23A98BFB'/%3E%3Cstop offset='1' stop-color='%23C4F042'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">
 <title>M2 — AI control for your FiveM server</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -223,6 +224,11 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 .chip2.warn{color:var(--amber)}.chip2.warn .d{background:var(--amber)}
 .chip2.err{color:var(--red)}.chip2.err .d{background:var(--red)}
 .chip2.dim{color:var(--faint)}.chip2.dim .d{background:var(--faint)}
+.notice{display:flex;align-items:flex-start;gap:10px;background:var(--surface);border:1px solid var(--line);border-inline-start:3px solid var(--lime);border-radius:13px;padding:12px 14px;margin:10px 0 2px;font-size:13px;color:var(--dim);animation:pop .35s ease}
+.notice b{color:var(--text);font-weight:600}
+.notice a{color:var(--lime);font-weight:600;display:inline-block;margin-top:7px}
+.notice .nx{margin-inline-start:auto;cursor:pointer;color:var(--faint);flex:0 0 auto;font-size:15px;line-height:1;padding:2px}
+.m.b a{color:var(--lime);font-weight:600}
 .typ{display:inline-flex;gap:4px}.typ i{width:6px;height:6px;border-radius:50%;background:var(--dim);animation:bl 1.2s infinite}
 .typ i:nth-child(2){animation-delay:.2s}.typ i:nth-child(3){animation-delay:.4s}
 @keyframes bl{0%,60%,100%{opacity:.25}30%{opacity:1}}
@@ -435,6 +441,7 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
     </div>
     <div class="qal" data-i="qaLabel">Quick commands</div>
     <div class="qa" id="qa"></div>
+    <div id="notice" class="hide"></div>
     <div class="feed" id="feed"></div>
   </div>
 
@@ -471,13 +478,15 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 <script type="module">
 /* Firebase Auth wiring — reads the public web config from firebase-config.js
    (shared with dashboard.html). Exposes window.__mirsalFirebase for the
-   classic script below. Set useEmulator:true in firebase-config.js for local
-   testing against the Auth emulator. */
+   classic script below and fires "mirsal-auth-ready" once the persisted
+   session (if any) is known, so a reload lands signed-in users straight in
+   the console. Set useEmulator:true in firebase-config.js for local testing
+   against the Auth emulator. */
 const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulator: false };
 try {
   if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || FIREBASE_CONFIG.useEmulator) {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
-    const { getAuth, signInWithEmailAndPassword, signOut, connectAuthEmulator } =
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, connectAuthEmulator } =
       await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
     const app = initializeApp(FIREBASE_CONFIG.useEmulator
       ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
@@ -486,11 +495,23 @@ try {
     if (FIREBASE_CONFIG.useEmulator) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     window.__mirsalFirebase = {
       async signIn(email, password) { const c = await signInWithEmailAndPassword(auth, email, password); return c.user.getIdToken(); },
-      async getToken() { return auth.currentUser ? auth.currentUser.getIdToken() : null; },
+      // force=true mints a fresh token (the 401 retry path)
+      async getToken(force) { return auth.currentUser ? auth.currentUser.getIdToken(Boolean(force)) : null; },
       signOut() { return signOut(auth); },
     };
+    let first = true;
+    onAuthStateChanged(auth, (user) => {
+      if (!first) return;
+      first = false;
+      document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: Boolean(user) } }));
+    });
+  } else {
+    document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
   }
-} catch (err) { console.warn("Firebase init failed:", err); }
+} catch (err) {
+  console.warn("Firebase init failed:", err);
+  document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
+}
 </script>
 
 <script>
@@ -507,9 +528,16 @@ const I18N={
   modeRun:"Run",modeAsk:"Ask",answer:"Answer",listening:"Listening…",stop:"Stop",
   listenHint:"Speak your command — it sends automatically",
   ok:"Connected",off:"Offline",locked:"Plan inactive",
-  stQueued:"Sent to server",stNone:"Didn’t catch that",stAuth:"Session expired",
-  stOff:"Couldn’t reach server",stLocked:"Subscription inactive",
-  micNo:"Voice isn’t supported in this browser",micDenied:"Microphone permission denied"},
+  stQueued:"Sent to server",stNone:"Didn’t catch that",stAuth:"Session expired — sign in again",
+  stOff:"Couldn’t reach the server — check your connection and try again",stLocked:"Subscription inactive",
+  stRate:"Too many commands — wait a minute and try again",stErr:"Something went wrong — try again",
+  micNo:"Voice isn’t supported in this browser",micDenied:"Microphone permission denied",
+  micNothing:"Didn’t hear anything — try again, a bit closer to the mic",
+  noKeyTitle:"Add your AI key to unlock full understanding",
+  noKeyBody:"Commands already work via keyword matching; your own key adds free-form Arabic and Ask mode.",
+  noBridgeTitle:"Your FiveM server isn’t connected yet",
+  noBridgeBody:"Install the bridge resource from the dashboard so commands run in-game.",
+  openDash:"Open dashboard",planLink:"View plan"},
  ar:{title:"كيف أخدم سيرفرك؟",sub:"تكلّم أو اكتب — «تنفيذ» ينفّذ داخل اللعبة، «سؤال» يجيب فقط.",
   qaLabel:"أوامر سريعة",phRun:"اكتب أمرًا…",phAsk:"اسأل عن سيرفرك…",
   note:"أوامر التنفيذ داخل اللعبة فقط — من قائمة معتمدة.",
@@ -518,9 +546,16 @@ const I18N={
   modeRun:"تنفيذ",modeAsk:"سؤال",answer:"إجابة",listening:"أستمع…",stop:"إيقاف",
   listenHint:"قل أمرك — يُرسل تلقائيًا",
   ok:"متصل",off:"غير متصل",locked:"الاشتراك موقوف",
-  stQueued:"أُرسل للسيرفر",stNone:"ما فهمت الطلب",stAuth:"انتهت الجلسة",
-  stOff:"تعذّر الوصول للسيرفر",stLocked:"الاشتراك غير مفعّل",
-  micNo:"الصوت غير مدعوم",micDenied:"تم رفض إذن الميكروفون"}};
+  stQueued:"أُرسل للسيرفر",stNone:"ما فهمت الطلب",stAuth:"انتهت الجلسة — سجّل الدخول من جديد",
+  stOff:"تعذّر الوصول للسيرفر — تأكد من الاتصال وحاول مرة ثانية",stLocked:"الاشتراك غير مفعّل",
+  stRate:"أوامر كثيرة بسرعة — انتظر دقيقة وحاول من جديد",stErr:"صار خطأ — حاول مرة ثانية",
+  micNo:"الصوت غير مدعوم",micDenied:"تم رفض إذن الميكروفون",
+  micNothing:"ما سمعت شيء — قرّب من المايك وحاول مرة ثانية",
+  noKeyTitle:"أضِف مفتاح الذكاء لفهم أوسع",
+  noKeyBody:"الأوامر تعمل الآن بالمطابقة النصية؛ مفتاحك يضيف الفهم الحر ووضع «سؤال».",
+  noBridgeTitle:"سيرفرك غير متصل بعد",
+  noBridgeBody:"ركّب مورد الجسر من لوحة التحكم حتى تعمل الأوامر داخل اللعبة.",
+  openDash:"افتح لوحة التحكم",planLink:"عرض الاشتراك"}};
 const ACT={spawn_vehicle:{en:"Vehicle",ar:"مركبة",c:"l"},set_weather:{en:"Weather",ar:"الطقس",c:"v"},
  set_time:{en:"Time",ar:"الوقت",c:"p"},heal_player:{en:"Heal",ar:"علاج",c:"l"},
  spawn_npc:{en:"NPCs",ar:"شخصيات",c:"v"},repair_vehicle:{en:"Repair",ar:"إصلاح",c:"p"},none:{en:"Unrecognized",ar:"غير معروف",c:"d"}};
@@ -550,7 +585,7 @@ function setLang(l){LANG=l;
  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
  document.querySelectorAll("[data-ip]").forEach(e=>e.placeholder=t(e.dataset.ip));
  document.querySelectorAll("[data-q]").forEach(e=>e.textContent=QUICK[e.dataset.q][LANG]);
- $("cmd").placeholder=t(MODE==="ask"?"phAsk":"phRun");refreshStat();}
+ $("cmd").placeholder=t(MODE==="ask"?"phAsk":"phRun");refreshStat();renderNotice();}
 function refreshStat(s){const e=$("stat");const c=s||e.dataset.s;e.dataset.s=c;$("statTxt").textContent=t(c)||t("ok");
  if(SESSION&&SESSION.name)$("tag").textContent=SESSION.name;}
 
@@ -563,14 +598,45 @@ function setAuthTab(tab){AUTHTAB=tab;
  $("authTitle").textContent=tab==="signup"?"Create your account":"Welcome back";
  $("authSub").textContent=tab==="signup"?"Free to start. No card required.":"Sign in to your M2 console.";
  $("authBtn").textContent=tab==="signup"?"Create account":"Sign in";}
+/* authedFetch: every API call carries a fresh Firebase ID token; a 401 gets
+   ONE forced-refresh retry, after which callers treat it as session expiry. */
+async function authedFetch(path,opts={},_retried){
+ const fb=window.__mirsalFirebase;
+ const token=fb?await fb.getToken(Boolean(_retried)).catch(()=>null):null;
+ const r=await fetch((CONFIG.BACKEND_URL||"")+path,{...opts,
+  headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||""),...(opts.headers||{})}});
+ if(r.status===401&&!_retried&&fb)return authedFetch(path,opts,true);
+ return r;
+}
+function sessionExpired(){
+ if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+ SESSION=null;$("feed").innerHTML="";$("chero").classList.remove("min");
+ $("console").classList.remove("show");$("site").classList.remove("hide");
+ document.documentElement.dir="ltr";
+ openAuth("login");$("aErr").textContent=t("stAuth");
+}
+/* Loads /api/tenant/me into SESSION. Returns "ok" | "offline" | "expired". */
+async function loadTenantIntoSession(fallbackName){
+ try{
+  const r=await authedFetch("/api/tenant/me");
+  if(r.status===401)return "expired";
+  const d=await r.json().catch(()=>({}));
+  if(r.ok&&d.tenant){
+   SESSION={name:d.tenant.name||fallbackName||"My server",active:!!d.tenant.active,
+    hasKey:!!d.tenant.hasKey,lastPolledAt:d.tenant.lastPolledAt||null,dismissed:false};
+   return "ok";
+  }
+  return "offline";
+ }catch(e){return "offline";}
+}
 async function doAuth(){
  const email=$("aEmail").value.trim(),pass=$("aPass").value,name=$("aName").value.trim();
  $("aErr").textContent="";
  if(!email||!pass){$("aErr").textContent="Enter your email and password.";return;}
- if(AUTHTAB==="signup"&&pass.length<6){$("aErr").textContent="Password must be at least 6 characters.";return;}
+ if(AUTHTAB==="signup"&&pass.length<8){$("aErr").textContent="Password must be at least 8 characters.";return;}
  const fb=window.__mirsalFirebase;
  if(!fb){ // Firebase not configured on this copy of the app
-  if(LOCAL_PREVIEW){SESSION={token:"preview",name:name||email.split("@")[0]||"My server",active:true};enterConsole();}
+  if(LOCAL_PREVIEW){SESSION={token:"preview",name:name||email.split("@")[0]||"My server",active:true,hasKey:true};enterConsole();}
   else $("aErr").textContent="Couldn’t reach the server.";
   return;
  }
@@ -578,14 +644,17 @@ async function doAuth(){
   if(AUTHTAB==="signup"){
    const r=await fetch((CONFIG.BACKEND_URL||"")+"/api/signup",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({email,password:pass,name})});
-   if(r.status===409){$("aErr").textContent="That email is already registered.";return;}
+   const d=await r.json().catch(()=>({}));
+   const code=d.error&&d.error.code;
+   if(code==="EMAIL_TAKEN"){$("aErr").textContent="That email is already registered.";return;}
+   if(code==="BAD_INPUT"){$("aErr").textContent=d.error.message;return;}
    if(!r.ok){$("aErr").textContent="Couldn’t create the account.";return;}
   }
-  const token=await fb.signIn(email,pass);
-  let nm=name||email.split("@")[0]||"My server",active=false;
-  try{const me=await fetch((CONFIG.BACKEND_URL||"")+"/api/tenant/me",{headers:{"Authorization":"Bearer "+token}});
-   if(me.ok){const d=await me.json();if(d.tenant){nm=d.tenant.name||nm;active=!!d.tenant.active;}}}catch(e){}
-  SESSION={token,name:nm,active};enterConsole();
+  await fb.signIn(email,pass);
+  const state=await loadTenantIntoSession(name||email.split("@")[0]);
+  if(state==="expired"){$("aErr").textContent=t("stAuth");return;}
+  if(state==="offline")SESSION={name:name||email.split("@")[0]||"My server",active:true,hasKey:true,offline:true};
+  enterConsole();
  }catch(e){
   const code=e&&e.code;
   $("aErr").textContent=code==="auth/network-request-failed"?"Couldn’t reach the server.":
@@ -593,11 +662,37 @@ async function doAuth(){
    code==="auth/email-already-in-use"?"That email is already registered.":"Something went wrong. Try again.";
  }
 }
+/* Session persistence: the Firebase module fires mirsal-auth-ready once the
+   persisted session is known. Signed-in -> straight into the console. */
+let BOOTED=false;
+function bootSession(){
+ document.addEventListener("mirsal-auth-ready",async(e)=>{
+  if(BOOTED||!e.detail.signedIn)return;
+  BOOTED=true;
+  const state=await loadTenantIntoSession();
+  if(state==="expired"){BOOTED=false;if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});return;}
+  if(state==="offline")SESSION={name:"My server",active:true,hasKey:true,offline:true};
+  enterConsole();
+  if(state==="offline")refreshStat("off");
+ });
+}
 function enterConsole(){closeAuth();$("site").classList.add("hide");$("console").classList.add("show");
- if(LANG==="ar")document.documentElement.dir="rtl";refreshStat(SESSION.active?"ok":"locked");}
+ if(LANG==="ar")document.documentElement.dir="rtl";refreshStat(SESSION.active?"ok":"locked");renderNotice();}
+/* Setup notice: signed-in tenants missing a key or a connected server get a
+   friendly pointer to the dashboard instead of failing silently. */
+function renderNotice(){
+ const n=$("notice");
+ if(!SESSION||SESSION.dismissed||SESSION.offline){n.className="hide";n.innerHTML="";return;}
+ const kind=!SESSION.hasKey?"key":(!SESSION.lastPolledAt?"bridge":null);
+ if(!kind){n.className="hide";n.innerHTML="";return;}
+ n.className="notice";
+ n.innerHTML=`<div><b>${t(kind==="key"?"noKeyTitle":"noBridgeTitle")}</b><div style="margin-top:3px">${t(kind==="key"?"noKeyBody":"noBridgeBody")}</div><a href="/dashboard">${t("openDash")} →</a></div><span class="nx" onclick="dismissNotice()">✕</span>`;
+}
+function dismissNotice(){if(SESSION)SESSION.dismissed=true;renderNotice();}
 function signOut(){if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
- SESSION=null;closeSheet();$("console").classList.remove("show");$("site").classList.remove("hide");
- document.documentElement.dir="ltr";$("feed").innerHTML="";$("chero").classList.remove("min");window.scrollTo(0,0);}
+ SESSION=null;BOOTED=false;closeSheet();$("console").classList.remove("show");$("site").classList.remove("hide");
+ document.documentElement.dir="ltr";$("feed").innerHTML="";$("chero").classList.remove("min");
+ $("notice").className="hide";$("notice").innerHTML="";window.scrollTo(0,0);}
 
 function openSheet(){$("fUrl").value=CONFIG.BACKEND_URL;$("bd").classList.add("show");$("sheet").classList.add("show");}
 function closeSheet(){$("bd").classList.remove("show");$("sheet").classList.remove("show");CONFIG.BACKEND_URL=$("fUrl").value.trim();}
@@ -609,25 +704,33 @@ function addU(x){$("chero").classList.add("min");
  const g=document.createElement("div");g.className="grp";
  g.innerHTML=`<div class="m u${MODE==="ask"?" ask":""}"></div><div class="m b"><div class="typ"><i></i><i></i><i></i></div></div>`;
  g.querySelector(".m.u").textContent=x;$("feed").appendChild(g);down();return g.querySelector(".m.b");}
-function fillRun(b,{action,message,status}){const a=ACT[action]||ACT.none;
- const c={queued:{k:"",i:"stQueued"},none:{k:"dim",i:"stNone"},auth:{k:"err",i:"stAuth"},off:{k:"warn",i:"stOff"},locked:{k:"err",i:"stLocked"}}[status]||{k:"",i:"stQueued"};
+function fillRun(b,{action,message,status,link}){const a=ACT[action]||ACT.none;
+ const c={queued:{k:"",i:"stQueued"},none:{k:"dim",i:"stNone"},auth:{k:"err",i:"stAuth"},off:{k:"warn",i:"stOff"},locked:{k:"err",i:"stLocked"},rate:{k:"warn",i:"stRate"},err:{k:"err",i:"stErr"}}[status]||{k:"",i:"stQueued"};
  b.innerHTML=`<span class="bg ${a.c}">${a[LANG]}</span><div class="tx"></div><div class="chip2 ${c.k}"><span class="d"></span>${t(c.i)}</div>`;
- b.querySelector(".tx").textContent=message;down();}
+ b.querySelector(".tx").textContent=message;
+ if(link){const el=document.createElement("a");el.href=link.href;el.textContent=link.label+" →";el.style.cssText="display:inline-block;margin-top:8px";b.appendChild(el);}
+ down();}
+function sysMsg(x){$("chero").classList.add("min");
+ const g=document.createElement("div");g.className="grp";
+ g.innerHTML='<div class="m b" style="color:var(--dim);font-size:13px"></div>';
+ g.querySelector(".m").textContent=x;$("feed").appendChild(g);down();}
 function fillAsk(b,x){b.innerHTML=`<span class="bg v">${t("answer")}</span><div class="tx"></div>`;b.querySelector(".tx").textContent=x;down();}
 
 async function send(pre){
  const inp=$("cmd");const x=(pre!==undefined?pre:inp.value).trim();if(!x)return;
  inp.value="";const b=addU(x);const mode=MODE;
- if(SESSION&&!SESSION.active)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked"});
+ if(SESSION&&!SESSION.active)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked",link:{href:"/dashboard#plan",label:t("planLink")}});
  if(LOCAL_PREVIEW&&!CONFIG.BACKEND_URL&&(!SESSION||SESSION.token==="preview"))
   return setTimeout(()=>{mode==="ask"?fillAsk(b,pAsk()):fillRun(b,pRun(x));},550);
  try{
-  const token=window.__mirsalFirebase?await window.__mirsalFirebase.getToken():(SESSION?SESSION.token:"");
-  const r=await fetch((CONFIG.BACKEND_URL||"")+"/api/command",{method:"POST",
-   headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||"")},body:JSON.stringify({text:x,mode})});
-  if(r.status===401)return fillRun(b,{action:"none",message:t("stAuth"),status:"auth"});
-  if(r.status===402)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked"});
-  const d=await r.json();refreshStat("ok");
+  const r=await authedFetch("/api/command",{method:"POST",body:JSON.stringify({text:x,mode})});
+  if(r.status===401){fillRun(b,{action:"none",message:t("stAuth"),status:"auth"});return sessionExpired();}
+  const d=await r.json().catch(()=>({}));
+  const code=d.error&&d.error.code;
+  if(r.status===402)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked",link:{href:"/dashboard#plan",label:t("planLink")}});
+  if(r.status===429)return fillRun(b,{action:"none",message:t("stRate"),status:"rate"});
+  if(!r.ok)return fillRun(b,{action:"none",message:code==="BAD_INPUT"?t("stNone"):t("stErr"),status:code==="BAD_INPUT"?"none":"err"});
+  refreshStat("ok");
   if(mode==="ask")fillAsk(b,d.reply||"");
   else fillRun(b,{action:d.action||"none",message:d.message||"",status:d.action==="none"?"none":(d.queued?"queued":"none")});
  }catch(e){refreshStat("off");fillRun(b,{action:"none",message:t("stOff"),status:"off"});}
@@ -652,19 +755,22 @@ function pAsk(){return LANG==="ar"?"في وضع «تنفيذ» أقدر أنزّ
  :"In Run mode I can spawn vehicles, change weather and time, heal, spawn NPCs, and repair vehicles.";}
 
 /* voice */
-let rec=null,lis=false,ac=null,an=null,ms=null,raf=null,da=null;
+let rec=null,lis=false,ac=null,an=null,ms=null,raf=null,da=null,heard=false;
 function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SR){$("mic").style.opacity=".4";$("mic").onclick=()=>alert(t("micNo"));return;}
+ if(!SR){$("mic").style.opacity=".4";$("mic").onclick=()=>sysMsg(t("micNo"));return;}
  rec=new SR();rec.interimResults=true;rec.continuous=false;
  rec.onresult=e=>{let it="",fi="";
   for(let i=e.resultIndex;i<e.results.length;i++){const s=e.results[i][0].transcript;e.results[i].isFinal?fi+=s:it+=s;}
   const sh=(fi||it).trim();if(sh){$("ltxt").textContent=sh;$("ltxt").classList.add("has");}
-  if(fi.trim()){const x=fi.trim();stopMic();setTimeout(()=>send(x),250);}};
- rec.onend=()=>{if(lis)stopMic();};
- rec.onerror=e=>{stopMic();if(e.error==="not-allowed")alert(t("micDenied"));};}
+  if(fi.trim()){const x=fi.trim();heard=true;stopMic();setTimeout(()=>send(x),250);}};
+ rec.onend=()=>{if(lis){const had=heard;stopMic();if(!had)sysMsg(t("micNothing"));}};
+ rec.onerror=e=>{const kind=e.error;stopMic();
+  if(kind==="not-allowed"||kind==="service-not-allowed")sysMsg(t("micDenied"));
+  else if(kind==="no-speech")sysMsg(t("micNothing"));};}
 async function toggleMic(){
  if(lis)return stopMic();
- if(!rec)return alert(t("micNo"));
+ if(!rec)return sysMsg(t("micNo"));
+ heard=false;
  $("ltxt").textContent=t("listening");$("ltxt").classList.remove("has");$("lis").classList.add("show");lis=true;
  rec.lang=LANG==="ar"?"ar-AE":"en-US";try{rec.start();}catch(e){}
  try{ms=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -691,7 +797,7 @@ function stopMic(){lis=false;try{rec&&rec.stop();}catch(e){}
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}}),{threshold:.1});
 document.querySelectorAll(".reveal").forEach(e=>io.observe(e));
 
-renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();
+renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();bootSession();
 </script>
 </body>
 </html>
