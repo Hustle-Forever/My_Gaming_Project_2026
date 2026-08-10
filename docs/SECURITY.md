@@ -27,9 +27,9 @@
 - Bridge → API: per-tenant random `x-bridge-token` (`brg_` + 48 hex), rotatable from the dashboard; old token dies instantly.
 - No open endpoints except `/api/health`, `/api/signup`, and the 501 Stripe stub.
 
-## 4. Pay-gate
+## 4. Pay-gate — currently OPEN (no payment)
 
-`active:false` → **402** on `/api/command` and `/api/bridge/poll`. Ack is deliberately un-gated so in-flight commands can settle. New signups start locked.
+The mechanism is intact: `active:false` → **402** on `/api/command` and `/api/bridge/poll` (ack stays un-gated so in-flight commands settle, proven by smoke test #14). **But new signups are created `active:true`** (`api/signup.js`) — open access, no payment required, by product decision. To charge later: flip that default back to `false` (or let the Stripe webhook set it). Nothing else changes — the gate code and the `subscriptionStatus` seam stay in place.
 
 ## 5. Firestore rules
 

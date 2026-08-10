@@ -23,8 +23,11 @@ module.exports = async (req, res) => {
 
   try {
     const user = await auth.createUser({ email, password });
-    await createTenant(user.uid, { name });
-    console.log(`[signup] created tenant ${user.uid} (${email}) - active:false`);
+    // Open access: new accounts are active immediately — no payment required.
+    // The `active` flag + 402 pay-gate remain in the code as the dormant Stripe
+    // seam; flip this back to `active:false` (or let Stripe set it) to charge.
+    await createTenant(user.uid, { name, active: true });
+    console.log(`[signup] created tenant ${user.uid} (${email}) - active:true (open access)`);
     return res.status(200).json({ ok: true, uid: user.uid });
   } catch (err) {
     if (err.code === 'auth/email-already-exists') {

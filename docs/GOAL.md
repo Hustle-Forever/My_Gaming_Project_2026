@@ -14,9 +14,10 @@
 
 ## Business model
 
-- SaaS subscription per server (tenant). `active:false` → 402 on every path; nothing runs.
+- **Open access right now — no payment.** New accounts sign up and work immediately (`active:true`). The `active` pay-gate and `subscriptionStatus` field stay in the code as a dormant seam; charging is a one-line default flip + Stripe later.
+- SaaS subscription per server (tenant) is the *future* model: `active:false` → 402 on every path.
 - **BYOK** (bring your own AI key): inference costs live with the customer; our costs stay flat per tenant.
-- Activation is manual today (`scripts/activate.js`); Stripe drops into the same single `active` boolean later (see the seam in [ENGINEERING.md](ENGINEERING.md)).
+- `scripts/activate.js` still exists to toggle any tenant's `active` flag by hand.
 
 ## Status (2026-08-10)
 

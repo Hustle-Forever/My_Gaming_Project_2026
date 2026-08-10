@@ -87,14 +87,9 @@ const json = async (res) => ({ status: res.status, body: await res.json().catch(
   }));
   check('command without token -> 401', noAuth.status === 401, `got ${noAuth.status}`);
 
-  // 4. pay-gate before activation -> 402
-  const gated = await sendCmd('ابغى سيارة شرطة');
-  check('inactive tenant -> 402, nothing runs', gated.status === 402, JSON.stringify(gated.body));
-
-  // 5. activate (what scripts/activate.js does; Stripe's webhook later)
+  // 4. OPEN ACCESS: new accounts are active immediately — no payment required.
   const { getTenant, updateTenant } = require(path.join(ROOT, 'lib', 'firestore'));
-  await updateTenant(uid, { active: true });
-  check('activation flips the single gate', (await getTenant(uid)).active === true);
+  check('new signup is active by default (no payment)', (await getTenant(uid)).active === true);
 
   // 6. store provider key -> encrypted at rest, decrypt round-trips
   const keyRes = await api('/api/tenant/key', { method: 'POST', body: JSON.stringify({ apiKey: GEMINI_KEY, provider: 'gemini' }) });

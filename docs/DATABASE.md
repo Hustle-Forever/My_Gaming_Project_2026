@@ -11,7 +11,7 @@
 | field | type | notes |
 |---|---|---|
 | `name` | string | server display name (≤80 chars) |
-| `active` | bool | **the pay-gate.** Manual today; Stripe flips it later |
+| `active` | bool | **the pay-gate.** Created `true` on signup today (open access, no payment); Stripe flips it later |
 | `subscriptionStatus` | string | `"manual"` today — Stripe seam field |
 | `provider` | string | `"gemini"` (or `"claude"` once implemented) |
 | `providerKeyEnc` | string\|null | customer AI key, AES-256-GCM ciphertext — never plaintext, never sent to any client |
