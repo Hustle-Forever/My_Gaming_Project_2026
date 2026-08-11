@@ -52,10 +52,39 @@ test('garbage bearer token -> 401', async () => {
 });
 
 test('refresh-token path mints a fresh ID token the API accepts', async () => {
-  const su = await signup();
-  const { refreshToken } = await signIn(su.email, su.password);
-  const freshToken = await refreshIdToken(refreshToken);
+  const t = await freshTenant();
+  const freshToken = await refreshIdToken(t.refreshToken);
   assert.ok(freshToken, 'refresh must return an id token');
+  const me = await api(freshToken)('/api/tenant/me');
+  assert.equal(me.status, 200, JSON.stringify(me.body));
+});
+
+test('EMAIL VERIFICATION GATE: unverified account -> 403 EMAIL_UNVERIFIED on every ID-token endpoint', async () => {
+  const t = await freshTenant({ verified: false });
+  for (const [method, pathname, body] of [
+    ['GET', '/api/tenant/me', null],
+    ['POST', '/api/command', JSON.stringify({ text: 'عالجني' })],
+    ['POST', '/api/tenant/key', JSON.stringify({ apiKey: 'AIzaSomething123456' })],
+    ['POST', '/api/tenant/rotate-bridge-token', '{}'],
+  ]) {
+    const res = await api(t.idToken)(pathname, { method, ...(body ? { body } : {}) });
+    assert.equal(res.status, 403, `${method} ${pathname} must 403 for unverified email, got ${res.status}`);
+    assert.equal(res.body.error && res.body.error.code, 'EMAIL_UNVERIFIED');
+  }
+});
+
+test('verification unlock: verify -> refreshed token passes the gate', async () => {
+  const t = await freshTenant({ verified: false });
+  assert.equal((await api(t.idToken)('/api/tenant/me')).status, 403);
+
+  const { firebase } = adminLibs();
+  await firebase.auth.updateUser(t.uid, { emailVerified: true });
+
+  // old token still carries email_verified:false - must STAY blocked
+  assert.equal((await api(t.idToken)('/api/tenant/me')).status, 403, 'stale unverified claim must not pass');
+
+  // refreshed token carries the new claim -> unlocked
+  const freshToken = await refreshIdToken(t.refreshToken);
   const me = await api(freshToken)('/api/tenant/me');
   assert.equal(me.status, 200, JSON.stringify(me.body));
 });

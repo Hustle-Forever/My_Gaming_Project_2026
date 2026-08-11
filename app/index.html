@@ -210,6 +210,8 @@ footer{border-top:1px solid var(--line);padding:32px 20px;text-align:center;colo
 /* ================= AUTH ================= */
 #auth{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;justify-content:center;padding:28px 22px;overflow-y:auto}
 #auth.show{display:flex}
+#verify{position:fixed;inset:0;z-index:62;background:var(--bg);display:none;flex-direction:column;justify-content:center;padding:28px 22px;overflow-y:auto}
+#verify.show{display:flex}
 .auth-box{width:100%;max-width:380px;margin:0 auto}
 .auth-box .orb-wrap{width:78px;height:78px;margin:0 auto 18px}
 .auth-box h2{text-align:center;font-size:23px;margin-bottom:6px}
@@ -494,7 +496,21 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
     <div class="fld"><input id="aPass" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')doAuth()"></div>
     <button class="btn btn-p btn-lg" style="width:100%" onclick="doAuth()" id="authBtn">Create account</button>
     <div class="aerr" id="aErr"></div>
+    <span class="aback" id="forgotLink" data-i="forgot" onclick="forgotPassword()" style="display:none;color:var(--violet)">Forgot password?</span>
     <span class="aback" onclick="closeAuth()">← Back to site</span>
+  </div>
+</div>
+
+<!-- ============ VERIFY EMAIL ============ -->
+<div id="verify">
+  <div class="auth-box">
+    <div class="orb-wrap"><div class="orb"></div></div>
+    <h2 data-i="vTitle">Verify your email</h2>
+    <p class="as"><span data-i="vBody">We sent a verification link to</span><br><b id="vEmail" style="color:var(--text)">—</b></p>
+    <button class="btn btn-p btn-lg" style="width:100%" onclick="verifyContinue()" id="vGo" data-i="vContinue">I’ve verified — continue</button>
+    <button class="btn btn-g btn-lg" style="width:100%;margin-top:10px" onclick="verifyResend()" id="vResend" data-i="vResend">Resend email</button>
+    <div class="aerr" id="vMsg"></div>
+    <span class="aback" onclick="verifySignOut()" data-i="vOut">Use a different account</span>
   </div>
 </div>
 
@@ -562,7 +578,8 @@ const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulato
 try {
   if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || FIREBASE_CONFIG.useEmulator) {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
-    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, connectAuthEmulator } =
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, connectAuthEmulator,
+      sendEmailVerification, sendPasswordResetEmail } =
       await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
     const app = initializeApp(FIREBASE_CONFIG.useEmulator
       ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
@@ -571,9 +588,15 @@ try {
     if (FIREBASE_CONFIG.useEmulator) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     window.__mirsalFirebase = {
       async signIn(email, password) { const c = await signInWithEmailAndPassword(auth, email, password); return c.user.getIdToken(); },
-      // force=true mints a fresh token (the 401 retry path)
+      // force=true mints a fresh token (the 401 retry path / post-verification)
       async getToken(force) { return auth.currentUser ? auth.currentUser.getIdToken(Boolean(force)) : null; },
       signOut() { return signOut(auth); },
+      email() { return auth.currentUser ? auth.currentUser.email : null; },
+      emailVerified() { return auth.currentUser ? auth.currentUser.emailVerified : false; },
+      async sendVerify() { if (auth.currentUser) await sendEmailVerification(auth.currentUser); },
+      // re-checks with the server; returns the fresh verified state
+      async reloadUser() { if (!auth.currentUser) return false; await auth.currentUser.reload(); return auth.currentUser.emailVerified; },
+      resetPassword(email) { return sendPasswordResetEmail(auth, email); },
     };
     let first = true;
     onAuthStateChanged(auth, (user) => {
@@ -614,7 +637,13 @@ const I18N={
   noKeyBody:"Commands already work via keyword matching; your own key adds free-form Arabic and Ask mode.",
   noBridgeTitle:"Your FiveM server isn’t connected yet",
   noBridgeBody:"Install the bridge resource from the dashboard so commands run in-game.",
-  openDash:"Open dashboard",planLink:"View plan"},
+  openDash:"Open dashboard",planLink:"View plan",
+  vTitle:"Verify your email",vBody:"We sent a verification link to",
+  vContinue:"I’ve verified — continue",vResend:"Resend email",vOut:"Use a different account",
+  vNotYet:"Not verified yet — click the link in the email first, then try again.",
+  vSentAgain:"Sent ✓ — check your inbox (and spam folder).",
+  forgot:"Forgot password?",resetSent:"If that email has an account, a reset link is on its way.",
+  enterEmailFirst:"Type your email above first."},
  ar:{title:"كيف أخدم سيرفرك؟",sub:"تكلّم أو اكتب — «تنفيذ» ينفّذ داخل اللعبة، «سؤال» يجيب فقط.",
   qaLabel:"أوامر سريعة",phRun:"اكتب أمرًا…",phAsk:"اسأل عن سيرفرك…",
   note:"أوامر التنفيذ داخل اللعبة فقط — من قائمة معتمدة.",
@@ -632,7 +661,13 @@ const I18N={
   noKeyBody:"الأوامر تعمل الآن بالمطابقة النصية؛ مفتاحك يضيف الفهم الحر ووضع «سؤال».",
   noBridgeTitle:"سيرفرك غير متصل بعد",
   noBridgeBody:"ركّب مورد الجسر من لوحة التحكم حتى تعمل الأوامر داخل اللعبة.",
-  openDash:"افتح لوحة التحكم",planLink:"عرض الاشتراك"}};
+  openDash:"افتح لوحة التحكم",planLink:"عرض الاشتراك",
+  vTitle:"فعّل بريدك الإلكتروني",vBody:"أرسلنا رابط التفعيل إلى",
+  vContinue:"فعّلت — أكمل",vResend:"إعادة الإرسال",vOut:"استخدم حسابًا آخر",
+  vNotYet:"لم يتفعّل بعد — اضغط الرابط في البريد أولًا ثم حاول.",
+  vSentAgain:"أُرسل ✓ — تحقق من بريدك (ومجلد المزعج).",
+  forgot:"نسيت كلمة المرور؟",resetSent:"إذا كان البريد مسجّلًا، وصلك رابط الاستعادة.",
+  enterEmailFirst:"اكتب بريدك فوق أولًا."}};
 const ACT={spawn_vehicle:{en:"Vehicle",ar:"مركبة",c:"l"},set_weather:{en:"Weather",ar:"الطقس",c:"v"},
  set_time:{en:"Time",ar:"الوقت",c:"p"},heal_player:{en:"Heal",ar:"علاج",c:"l"},
  spawn_npc:{en:"NPCs",ar:"شخصيات",c:"v"},repair_vehicle:{en:"Repair",ar:"إصلاح",c:"p"},none:{en:"Unrecognized",ar:"غير معروف",c:"d"}};
@@ -677,7 +712,8 @@ function setAuthTab(tab){AUTHTAB=tab;
  $("nameFld").classList.toggle("hide",tab!=="signup");
  $("authTitle").textContent=tab==="signup"?"Create your account":"Welcome back";
  $("authSub").textContent=tab==="signup"?"Free to start. No card required.":"Sign in to your M2 console.";
- $("authBtn").textContent=tab==="signup"?"Create account":"Sign in";}
+ $("authBtn").textContent=tab==="signup"?"Create account":"Sign in";
+ $("forgotLink").style.display=tab==="login"?"block":"none";}
 /* authedFetch: every API call carries a fresh Firebase ID token; a 401 gets
    ONE forced-refresh retry, after which callers treat it as session expiry. */
 async function authedFetch(path,opts={},_retried){
@@ -695,13 +731,48 @@ function sessionExpired(){
  document.documentElement.dir="ltr";
  openAuth("login");$("aErr").textContent=t("stAuth");
 }
+/* Email verification screen: server enforces the gate (403 EMAIL_UNVERIFIED);
+   this UI explains it and offers resend / continue / switch account. */
+let VCOOL=0,VTIMER=null;
+function fbx(){return window.__mirsalFirebase;}
+function showVerify(email){
+ $("vEmail").textContent=email||(fbx()&&fbx().email())||"";
+ closeAuth();$("verify").classList.add("show");$("vMsg").textContent="";}
+function hideVerify(){$("verify").classList.remove("show");}
+async function verifyResend(){
+ if(VCOOL>0||!fbx())return;
+ try{await fbx().sendVerify();$("vMsg").style.color="var(--lime)";$("vMsg").textContent=t("vSentAgain");}
+ catch(e){$("vMsg").style.color="";$("vMsg").textContent=t("stErr");}
+ VCOOL=60;const b=$("vResend");b.disabled=true;
+ VTIMER=setInterval(()=>{VCOOL--;b.textContent=t("vResend")+" ("+VCOOL+")";
+  if(VCOOL<=0){clearInterval(VTIMER);b.disabled=false;b.textContent=t("vResend");}},1000);}
+async function verifyContinue(){
+ if(!fbx())return;
+ $("vMsg").style.color="";$("vMsg").textContent="";
+ const ok=await fbx().reloadUser().catch(()=>false);
+ if(!ok){$("vMsg").textContent=t("vNotYet");return;}
+ await fbx().getToken(true).catch(()=>{}); // refresh the email_verified claim
+ hideVerify();BOOTED=true;
+ const state=await loadTenantIntoSession();
+ if(state==="ok"){enterConsole();}
+ else if(state==="offline"){SESSION={name:"My server",active:true,hasKey:true,offline:true};enterConsole();refreshStat("off");}
+ else{BOOTED=false;sessionExpired();}}
+function verifySignOut(){hideVerify();signOut();openAuth("login");}
+async function forgotPassword(){
+ const email=$("aEmail").value.trim();
+ if(!email){$("aErr").textContent=t("enterEmailFirst");return;}
+ if(fbx()){try{await fbx().resetPassword(email);}catch(e){/* neutral - no account enumeration */}}
+ $("aErr").style.color="var(--lime)";$("aErr").textContent=t("resetSent");
+ setTimeout(()=>{$("aErr").style.color="";$("aErr").textContent="";},6000);}
+
 /* Loads /api/tenant/me into SESSION.
-   "ok" | "expired" (401) | "error" (server answered but broken - fail CLOSED)
-   | "offline" (network unreachable - enter console, everything shows off). */
+   "ok" | "expired" (401) | "unverified" (403) | "error" (server answered but
+   broken - fail CLOSED) | "offline" (network unreachable). */
 async function loadTenantIntoSession(fallbackName){
  try{
   const r=await authedFetch("/api/tenant/me");
   if(r.status===401)return "expired";
+  if(r.status===403)return "unverified";
   const d=await r.json().catch(()=>({}));
   if(r.ok&&d.tenant){
    SESSION={name:d.tenant.name||fallbackName||"My server",active:!!d.tenant.active,
@@ -733,8 +804,13 @@ async function doAuth(){
    if(!r.ok){$("aErr").textContent="Couldn’t create the account.";return;}
   }
   await fb.signIn(email,pass);
+  if(!fb.emailVerified()){
+   if(AUTHTAB==="signup"){try{await fb.sendVerify();}catch(e){}} // first email, best effort
+   showVerify(email);return;
+  }
   const state=await loadTenantIntoSession(name||email.split("@")[0]);
   if(state==="expired"){$("aErr").textContent=t("stAuth");return;}
+  if(state==="unverified"){showVerify(email);return;}
   if(state==="error"){$("aErr").textContent="Something went wrong. Try again.";return;} // fail closed
   if(state==="offline")SESSION={name:name||email.split("@")[0]||"My server",active:true,hasKey:true,offline:true};
   enterConsole();
@@ -752,7 +828,9 @@ function bootSession(){
  document.addEventListener("mirsal-auth-ready",async(e)=>{
   if(BOOTED||!e.detail.signedIn)return;
   BOOTED=true;
+  if(fbx()&&!fbx().emailVerified()){showVerify();return;} // persisted but unverified session
   const state=await loadTenantIntoSession();
+  if(state==="unverified"){showVerify();return;}
   if(state==="expired"||state==="error"){ // fail closed: stay on the site
    BOOTED=false;if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});return;}
   if(state==="offline")SESSION={name:"My server",active:true,hasKey:true,offline:true};
@@ -809,6 +887,7 @@ async function send(pre){
  try{
   const r=await authedFetch("/api/command",{method:"POST",body:JSON.stringify({text:x,mode})});
   if(r.status===401){fillRun(b,{action:"none",message:t("stAuth"),status:"auth"});return sessionExpired();}
+  if(r.status===403){fillRun(b,{action:"none",message:t("vNotYet"),status:"auth"});return showVerify();}
   const d=await r.json().catch(()=>({}));
   const code=d.error&&d.error.code;
   if(r.status===402)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked",link:{href:"/dashboard#plan",label:t("planLink")}});

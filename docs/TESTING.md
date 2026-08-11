@@ -2,14 +2,14 @@
 
 **Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-10
 
-> One command — `npm test` — boots the Firebase emulators, runs 45 integration tests over real HTTP against the real handlers, and tears everything down. No mocks of our own code: tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators, runs 48 integration tests over real HTTP against the real handlers, and tears everything down. No mocks of our own code: tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 45 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 48 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```
@@ -21,7 +21,8 @@ cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```
 tests/helpers.js        server boot, unique accounts, sign-in via emulator REST,
                         token refresh, api() helper, admin access for arranging state
-tests/auth.test.js      signup→tenant, token accepted, 401 matrix, refresh path
+tests/auth.test.js      signup→tenant, token accepted, 401 matrix, refresh path,
+                        EMAIL_UNVERIFIED gate + verify-then-refresh unlock
 tests/paygate.test.js   deactivate→402→reactivate→re-block cycle; ack stays open
 tests/keys.test.js      encryption at rest, round-trip, response-body leak scan
 tests/interpret.test.js AR/EN/diacritics/digits mapping; none queues nothing;
@@ -31,7 +32,8 @@ tests/queue.test.js     poll-once/ack lifecycle, rotation, ask queues nothing,
 tests/envelope.test.js  every error code returns the documented envelope
 tests/hardening.test.js security headers, CSP on HTML, same-origin CORS,
                         64KB payload cap, secret-free health detail
-tests/ratelimit.test.js per-tenant fixed window, isolation between tenants
+tests/ratelimit.test.js per-tenant fixed window, isolation between tenants,
+                        per-IP signup throttle
 ```
 
 ## What each area proves
@@ -43,7 +45,8 @@ tests/ratelimit.test.js per-tenant fixed window, isolation between tenants
 5. **The whitelist guarantee** (the test that must fail loudly if the product's core promise breaks): a test-only `fake` provider returns `give_server_admin` — the response is `none` and **the queue is asserted empty**. A control test proves the fake provider is genuinely consulted (a valid action from it *is* queued), so the rogue test can't pass vacuously. A third case proves an illegal *param* (non-whitelisted vehicle model) also dies at the gate.
 6. **Queue lifecycle** — poll delivers once (`inflight`, no double delivery), ack deletes, rotation kills the old token instantly, ask mode never queues.
 7. **Error envelope** — each code (`BAD_INPUT`, `AUTH_REQUIRED`, `PLAN_INACTIVE`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `EMAIL_TAKEN`, `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `NOT_IMPLEMENTED`) returns the exact `{ok:false,error:{code,message}}` shape from the exact endpoint that should produce it.
-8. **Rate limiting** — command #limit+1 within the window → 429 `RATE_LIMITED`; a second tenant is unaffected; ask mode counts (it spends provider money too).
+8. **Rate limiting** — command #limit+1 within the window → 429 `RATE_LIMITED`; a second tenant is unaffected; ask mode counts (it spends provider money too). Signup: limit+1 from one IP → 429 while other IPs pass.
+9. **Email verification** — an unverified account gets 403 `EMAIL_UNVERIFIED` on *every* human endpoint; after the admin flips the flag, the **stale** token stays blocked (the claim lives in the token itself) and only a refreshed token unlocks — exactly the client's continue-button flow. Test helpers create verified users by default; `{verified:false}` opts into the gate, and every test signup presents a unique synthetic IP so the shared emulator's signup throttle never trips on suite volume.
 
 ## Conventions
 

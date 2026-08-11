@@ -1,7 +1,9 @@
 // POST /api/signup - creates the Firebase Auth user AND the tenants/{uid}
-// doc in one step.
+// doc in one step. Per-IP throttled; the created account still has to pass
+// the email-verification gate before any other endpoint works.
+const crypto = require('crypto');
 const { auth } = require('../lib/firebase');
-const { createTenant } = require('../lib/firestore');
+const { createTenant, allowSignup } = require('../lib/firestore');
 const { endpoint, readJson, sendErr } = require('../lib/http');
 
 module.exports = endpoint(['POST'], async (req, res, { log }) => {
@@ -15,6 +17,17 @@ module.exports = endpoint(['POST'], async (req, res, { log }) => {
   }
   if (password.length < 8 || password.length > 128) {
     return sendErr(res, 400, 'BAD_INPUT', 'password must be 8-128 characters');
+  }
+
+  // Per-IP throttle (Vercel sets x-forwarded-for; first hop = client).
+  // IPs are hashed before storage - never persisted raw.
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+    || (req.socket && req.socket.remoteAddress) || 'unknown';
+  const ipHash = crypto.createHash('sha256').update(ip).digest('hex').slice(0, 32);
+  const limit = Math.max(1, Number(process.env.SIGNUP_RATE_LIMIT_PER_HOUR) || 20);
+  if (!(await allowSignup(ipHash, limit))) {
+    log('log', { msg: 'signup throttled', ipHash });
+    return sendErr(res, 429, 'RATE_LIMITED', 'too many signups from this network - try again later');
   }
 
   try {

@@ -17,6 +17,7 @@
 | `BAD_INPUT` | 400 | missing/invalid/over-long field | "didn't catch that" / field-specific |
 | `AUTH_REQUIRED` | 401 | bad or missing ID token / bridge token | "session expired — sign in again" |
 | `PLAN_INACTIVE` | 402 | tenant `active:false` | "subscription inactive" + plan link |
+| `EMAIL_UNVERIFIED` | 403 | valid token but `email_verified:false` | verify-email screen (resend / continue) |
 | `NOT_FOUND` | 404 | no tenant doc for this uid; unknown static path | generic |
 | `METHOD_NOT_ALLOWED` | 405 | wrong HTTP verb | — |
 | `EMAIL_TAKEN` | 409 | signup with a registered email | "that email is already registered" |
@@ -46,9 +47,13 @@ Liveness + dependency detail. Never contains secrets.
 `ok` is false when the Firestore probe fails (1-doc read, 2.5 s timeout).
 
 ### `POST /api/signup` — open
-`{ email, password, name? }` → creates the Firebase Auth user **and** `tenants/{uid}` in one step. **Open access: the tenant is created `active:true`** (no payment — flip in `api/signup.js` to re-gate).
+`{ email, password, name? }` → creates the Firebase Auth user **and** `tenants/{uid}` in one step. **Open access: the tenant is created `active:true`** (no payment — flip in `api/signup.js` to re-gate). The account still can't use any other endpoint until its email is verified.
+- Throttled per client IP (`SIGNUP_RATE_LIMIT_PER_HOUR`, default 20/h; IPs stored only as SHA-256 hashes in `rl_ip`) → 429 `RATE_LIMITED`.
+- If the tenant write fails after user creation, the auth user is rolled back (no orphaned emails).
 - 200 `{ ok:true, uid }`
-- 400 `BAD_INPUT` (email format, password 8–128) · 409 `EMAIL_TAKEN`
+- 400 `BAD_INPUT` (email format, password 8–128) · 409 `EMAIL_TAKEN` · 429 `RATE_LIMITED`
+
+**Email verification (all ID-token endpoints):** `requireVerifiedUser` rejects any token whose `email_verified` claim is false with 403 `EMAIL_UNVERIFIED` — server-enforced, so no client can skip it. The client sends the verification email via the Firebase web SDK (`sendEmailVerification`), then refreshes the token after the link is clicked (`getIdToken(true)`); password resets use `sendPasswordResetEmail` with deliberately neutral UI copy (no account enumeration).
 
 ### `POST /api/command` — ID token
 `{ text, mode? }` — `text` 1–300 chars; `mode` `"run"` (default) or `"ask"`.

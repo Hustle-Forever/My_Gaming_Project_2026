@@ -76,7 +76,7 @@ Everything runs on the **Firebase Emulator Suite**. Requirements: Node 18+, **Ja
 npm install
 cp .env.example .env          # set ENCRYPTION_KEY (any 64 hex chars for local)
 
-npm test                      # THE gate: 45 integration tests (auth, pay-gate cycle,
+npm test                      # THE gate: 48 integration tests (auth, pay-gate cycle,
                               # key custody, interpretation + rogue-provider whitelist
                               # proof, queue, error envelope, rate limiting)
 npm run smoke:emulator        # the end-to-end story test (15 checks)
@@ -117,7 +117,7 @@ api/          Vercel serverless functions (the platform backend)
 app/          static frontend: index.html (site+console), dashboard.html, firebase-config.js
 lib/          firebase admin init, firestore accessors, AES-GCM crypto, auth, http spine
 providers/    gemini.js (forced function calling) · claude.js (stub) · fake.js (test-only) · index.js
-tests/        the 45-test suite (node:test × Firebase emulators) — docs/TESTING.md
+tests/        the 48-test suite (node:test × Firebase emulators) — docs/TESTING.md
 scripts/      dev-server, seed, activate, smoke-emulator
 fivem-bridge/ the Lua resource customers install
 backend/      the original standalone single-tenant demo (Express + Claude) — still works:

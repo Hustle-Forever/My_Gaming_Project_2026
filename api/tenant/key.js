@@ -1,6 +1,6 @@
 // POST /api/tenant/key - store the customer's AI provider key, AES-256-GCM
 // encrypted, server-side only. The key is never echoed back and never logged.
-const { requireUser } = require('../../lib/auth');
+const { requireVerifiedUser } = require('../../lib/auth');
 const { getTenant, updateTenant } = require('../../lib/firestore');
 const { encryptSecret } = require('../../lib/crypto');
 const { endpoint, readJson, sendErr } = require('../../lib/http');
@@ -8,8 +8,8 @@ const { endpoint, readJson, sendErr } = require('../../lib/http');
 const PROVIDERS = ['gemini', 'claude'];
 
 module.exports = endpoint(['POST'], async (req, res, { log }) => {
-  const user = await requireUser(req);
-  if (!user) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid or missing ID token');
+  const user = await requireVerifiedUser(req, res);
+  if (!user) return;
   const tenant = await getTenant(user.uid);
   if (!tenant) return sendErr(res, 404, 'NOT_FOUND', 'no tenant for this account');
 

@@ -57,7 +57,9 @@ test('duplicate signup email -> 409 EMAIL_TAKEN', async () => {
   assert.equal(first.status, 200);
   const dup = await json(await fetch(`${BASE}/api/signup`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    // fresh synthetic IP: the shared emulator's per-IP signup throttle must
+    // not decide this test's outcome (it wants the EMAIL_TAKEN path)
+    headers: { 'content-type': 'application/json', 'x-forwarded-for': `10.200.${process.pid % 250}.9` },
     body: JSON.stringify({ email: first.email, password: 'another-pass-123', name: 'Dup' }),
   }));
   assertEnvelope(dup, 409, 'EMAIL_TAKEN');

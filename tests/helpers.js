@@ -78,9 +78,15 @@ function uniqueEmail(tag) {
 
 async function signup({ email, password = 'test-pass-123', name = 'Test RP' } = {}) {
   const mail = email || uniqueEmail('user');
+  counter += 1;
+  // Every test signup presents its own synthetic client IP: all test files
+  // share one emulator Firestore, so the per-IP signup throttle would
+  // otherwise trip on the suite's combined volume from 127.0.0.1.
+  // Throttle tests spoof FIXED IPs deliberately to exercise the limit.
+  const xff = `10.${process.pid % 250}.${Math.floor(counter / 250) % 250}.${counter % 250}`;
   const res = await json(await fetch(`${BASE}/api/signup`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
     body: JSON.stringify({ email: mail, password, name }),
   }));
   return { ...res, email: mail, password, uid: res.body.uid };
@@ -110,8 +116,14 @@ async function refreshIdToken(refreshToken) {
 }
 
 // One-call convenience: fresh signed-in tenant for a test file.
+// Verified by default (the API's email-verification gate would otherwise 403
+// every call); pass {verified:false} to test the unverified state itself.
 async function freshTenant(opts = {}) {
   const su = await signup(opts);
+  if (opts.verified !== false) {
+    const { firebase } = adminLibs();
+    await firebase.auth.updateUser(su.uid, { emailVerified: true });
+  }
   const { idToken, refreshToken } = await signIn(su.email, su.password);
   return { uid: su.uid, email: su.email, password: su.password, idToken, refreshToken };
 }

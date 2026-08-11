@@ -67,6 +67,10 @@ const json = async (res) => ({ status: res.status, body: await res.json().catch(
   const uid = su.body.uid;
   check('signup creates auth user + tenant', su.status === 200 && !!uid, JSON.stringify(su.body));
 
+  // 1b. verify the email (admin) - the API's verification gate 403s otherwise
+  const { auth: adminAuth } = require(path.join(ROOT, 'lib', 'firebase'));
+  await adminAuth.updateUser(uid, { emailVerified: true });
+
   // 2. sign in -> ID token
   const si = await json(await fetch(`http://${AUTH_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=any`, {
     method: 'POST', headers: { 'content-type': 'application/json' },

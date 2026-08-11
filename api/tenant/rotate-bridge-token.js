@@ -1,13 +1,13 @@
 // POST /api/tenant/rotate-bridge-token - generate a fresh bridge token.
 // The old token stops working immediately; the customer pastes the new one
 // into their server.cfg.
-const { requireUser } = require('../../lib/auth');
+const { requireVerifiedUser } = require('../../lib/auth');
 const { getTenant, updateTenant, newBridgeToken } = require('../../lib/firestore');
 const { endpoint, sendErr } = require('../../lib/http');
 
 module.exports = endpoint(['POST'], async (req, res, { log }) => {
-  const user = await requireUser(req);
-  if (!user) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid or missing ID token');
+  const user = await requireVerifiedUser(req, res);
+  if (!user) return;
   const tenant = await getTenant(user.uid);
   if (!tenant) return sendErr(res, 404, 'NOT_FOUND', 'no tenant for this account');
 

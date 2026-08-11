@@ -4,7 +4,7 @@
 // the tenant's decrypted key, re-validate against the whitelist, queue for
 // the bridge. First successful queue stamps firstCommandAt (setup checklist).
 const actions = require('../backend/actions');
-const { requireUser } = require('../lib/auth');
+const { requireVerifiedUser } = require('../lib/auth');
 const { getTenantAndCountCommand, enqueueCommand, updateTenant } = require('../lib/firestore');
 const { decryptSecret } = require('../lib/crypto');
 const providers = require('../providers');
@@ -13,8 +13,8 @@ const { endpoint, readJson, sendErr } = require('../lib/http');
 const MAX_TEXT = 300;
 
 module.exports = endpoint(['POST'], async (req, res, { log }) => {
-  const user = await requireUser(req);
-  if (!user) return sendErr(res, 401, 'AUTH_REQUIRED', 'invalid or missing ID token');
+  const user = await requireVerifiedUser(req, res);
+  if (!user) return;
 
   // One transactional read serves the tenant lookup AND the rate-limit count.
   // Math.max + ||30 guard: a typo'd env value (NaN/0/negative) must fall back

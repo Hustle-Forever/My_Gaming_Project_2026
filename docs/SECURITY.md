@@ -23,7 +23,9 @@
 
 ## 3. Authentication
 
-- App → API: Firebase **ID token** (`Authorization: Bearer`), verified by the Admin SDK on every request.
+- App → API: Firebase **ID token** (`Authorization: Bearer`), verified by the Admin SDK on every request, **plus a mandatory verified email**: `requireVerifiedUser` rejects `email_verified:false` tokens with 403 `EMAIL_UNVERIFIED` on every human endpoint — server-enforced, unskippable from the client.
+- Signup is per-IP throttled (`SIGNUP_RATE_LIMIT_PER_HOUR`, default 20/h; only SHA-256 IP hashes are stored) and rolls back the auth user if the tenant write fails — no orphaned emails.
+- Password reset uses neutral wording end-to-end (no account enumeration from our UI). Recommended console toggle: Authentication → Settings → **Email enumeration protection ON**.
 - Bridge → API: per-tenant random `x-bridge-token` (`brg_` + 48 hex), rotatable from the dashboard; old token dies instantly.
 - No open endpoints except `/api/health`, `/api/signup`, and the 501 Stripe stub.
 

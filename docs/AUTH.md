@@ -8,11 +8,13 @@
 
 ## Customers (humans)
 
-1. **Signup** — `POST /api/signup {email, password, name}` creates the Firebase Auth user **and** `tenants/{uid}` (**`active:true` — open access, no payment**) in one step. Duplicate email → 409 `EMAIL_TAKEN`. Password 8–128 chars.
-2. **Sign-in** — the pages use the Firebase web SDK (`signInWithEmailAndPassword`); the SDK manages refresh. Every API call fetches a fresh ID token via `getToken()`.
-3. **Session persistence** — the SDK persists the session; each page's module script fires a `mirsal-auth-ready` event after the first `onAuthStateChanged`, and the page routes accordingly: signed-in reload lands in the console/dashboard, signed-out lands on the site/auth screen.
-4. **Expiry handling** — on any 401 the client retries **once** with a force-refreshed token (`getIdToken(true)`); if it still 401s it signs out cleanly and shows a translated "session expired" on the auth screen. The refresh path itself is covered by `tests/auth.test.js`.
-5. **Verification** — `lib/auth.js → requireUser()` runs `admin.auth().verifyIdToken()` on the `Authorization: Bearer` header. Invalid/missing → 401. The uid **is** the tenant id — no separate mapping to get wrong.
+1. **Signup** — `POST /api/signup {email, password, name}` creates the Firebase Auth user **and** `tenants/{uid}` (**`active:true` — open access, no payment**) in one step. Duplicate email → 409 `EMAIL_TAKEN`. Password 8–128 chars. Per-IP throttled (hashed IPs, `SIGNUP_RATE_LIMIT_PER_HOUR`); a failed tenant write rolls the auth user back.
+2. **Email verification (mandatory)** — every ID-token endpoint requires the `email_verified` claim (`requireVerifiedUser` → 403 `EMAIL_UNVERIFIED` otherwise). The pages send the verification email on signup (Firebase `sendEmailVerification` — templates customizable in Firebase console → Authentication → Templates), show a dedicated verify screen (resend with 60s cooldown / "I've verified — continue" which reloads the user and force-refreshes the token / switch account), and route 403s from any call back to that screen. A stale pre-verification token can never pass: the claim lives in the token itself.
+3. **Password reset** — "Forgot password?" on the sign-in tab → `sendPasswordResetEmail`; the UI always answers neutrally ("if that email has an account…") so accounts can't be enumerated.
+4. **Sign-in** — the pages use the Firebase web SDK (`signInWithEmailAndPassword`); the SDK manages refresh. Every API call fetches a fresh ID token via `getToken()`.
+5. **Session persistence** — the SDK persists the session; each page's module script fires a `mirsal-auth-ready` event after the first `onAuthStateChanged`, and the page routes accordingly: signed-in reload lands in the console/dashboard (or the verify screen if unverified), signed-out lands on the site/auth screen.
+6. **Expiry handling** — on any 401 the client retries **once** with a force-refreshed token (`getIdToken(true)`); if it still 401s it signs out cleanly and shows a translated "session expired" on the auth screen. The refresh path itself is covered by `tests/auth.test.js`.
+7. **Token verification** — `lib/auth.js → requireUser()` runs `admin.auth().verifyIdToken()` on the `Authorization: Bearer` header. Invalid/missing → 401. The uid **is** the tenant id — no separate mapping to get wrong.
 
 ## FiveM servers (bridges)
 
