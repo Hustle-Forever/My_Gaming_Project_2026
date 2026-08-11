@@ -322,17 +322,21 @@ pre.cfg{background:var(--bg);border:1px solid var(--line);border-radius:12px;pad
 /* Same Firebase handshake as index.html — persisted session known ->
    "mirsal-auth-ready", so reloads keep owners signed in. */
 const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulator: false };
+// HARD RULE: the emulator only ever applies on localhost. A deployed site
+// must NEVER call 127.0.0.1, even if the flag ships enabled by mistake.
+const IS_LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+const USE_EMU = Boolean(FIREBASE_CONFIG.useEmulator) && IS_LOCAL;
 try {
-  if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || FIREBASE_CONFIG.useEmulator) {
+  if (!FIREBASE_CONFIG.apiKey.startsWith("PASTE_") || USE_EMU) {
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
     const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, connectAuthEmulator,
       sendEmailVerification, sendPasswordResetEmail } =
       await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
-    const app = initializeApp(FIREBASE_CONFIG.useEmulator
+    const app = initializeApp(USE_EMU
       ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
       : FIREBASE_CONFIG);
     const auth = getAuth(app);
-    if (FIREBASE_CONFIG.useEmulator) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    if (USE_EMU) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     window.__mirsalFirebase = {
       async signIn(email, password) { const c = await signInWithEmailAndPassword(auth, email, password); return c.user.getIdToken(); },
       async getToken(force) { return auth.currentUser ? auth.currentUser.getIdToken(Boolean(force)) : null; },
