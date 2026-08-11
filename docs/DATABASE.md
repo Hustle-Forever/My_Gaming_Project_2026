@@ -52,6 +52,19 @@ Server-scanner reports (see [SCANNER.md](SCANNER.md)). **Derived data only — n
 
 Per-IP signup throttle counters (`windowStart`, `count`, `expireAt`); keyed by a SHA-256 hash of the client IP — raw IPs are never stored. TTL-ready via `expireAt`.
 
+## Whitelist Officer
+
+See [WHITELIST.md](WHITELIST.md). All applicant data is **personal data**: only owner-configured identity fields are stored, full transcripts never hit application logs, and delete-application is a first-class owner action.
+
+| collection | shape |
+|---|---|
+| `tenants/{uid}/whitelist/config` | enabled, slug, questions[], criteria[], thresholds, languages[], identityFields[], ageRequired, discordWebhook |
+| `tenants/{uid}/applications/{appId}` | identity{}, language, status (in_progress\|submitted\|approved\|rejected\|reinterview), transcript[], scores[] (each with evidence), flags[], summary, recommendation, overall, confidence, decidedBy, decidedAtMs, decisionNote |
+| `whitelistSlugs/{slug}` | `{uid}` — unique public slug → tenant |
+| `applicationIndex/{appId}` | `{uid}` — private appId → tenant (so the public endpoints never expose the uid) |
+| `rl_apply/{ipHash}` | per-IP apply throttle (hashed IP, `expireAt`) |
+| `tenants/{uid}` (added) | `rlScanWindowStart/rlScanCount` earlier; whitelist adds no tenant-doc fields |
+
 ## Design choices
 
 - **No composite indexes needed:** the poll query filters on `status` only (single-field, auto-indexed) and sorts client-side by `createdAt`.

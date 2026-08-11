@@ -39,4 +39,16 @@ async function askText(tenant, apiKey, text) {
     : 'Ask mode needs an AI key - add yours in the dashboard. Run commands still work without one via keyword matching.';
 }
 
-module.exports = { interpretText, askText };
+// ---- Whitelist Officer: provider-backed judge + scorer (BYOK). Fall back is
+// handled upstream (lib/whitelist/brain.js) when there's no key. ----
+async function whitelistJudge(tenant, apiKey, args) {
+  const provider = PROVIDERS[tenant.provider] || gemini;
+  return provider.whitelistJudge ? provider.whitelistJudge(apiKey, args) : { sufficient: true };
+}
+async function whitelistScore(tenant, apiKey, args) {
+  const provider = PROVIDERS[tenant.provider] || gemini;
+  if (!provider.whitelistScore) throw new Error('provider has no whitelistScore');
+  return provider.whitelistScore(apiKey, args);
+}
+
+module.exports = { interpretText, askText, whitelistJudge, whitelistScore };

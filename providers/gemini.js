@@ -110,4 +110,86 @@ async function ask(apiKey, text) {
   return (response.text || '').trim();
 }
 
-module.exports = { name: 'gemini', interpret, ask, buildFunctionDeclaration };
+// ---- Whitelist Officer (forced structured output) ----
+const WL_BIAS = 'Score ONLY what each criterion describes. IGNORE nationality, ethnicity, gender, accent, and language proficiency — a short answer in a second language is NOT a worse answer. Never invent an evidence quote; if you cannot judge a criterion, set abstained:true instead of guessing.';
+
+// Judge answer sufficiency during the interview.
+async function whitelistJudge(apiKey, { question, answer, language }) {
+  const ai = new GoogleGenAI({ apiKey });
+  const decl = {
+    name: 'judge_answer',
+    description: 'Decide whether the applicant answer is sufficient or needs one follow-up.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        sufficient: { type: Type.BOOLEAN, description: 'true if the answer meaningfully addresses the question' },
+        followUpEn: { type: Type.STRING, description: 'a short follow-up question in English (only if not sufficient)' },
+        followUpAr: { type: Type.STRING, description: 'the same follow-up in Arabic' },
+      },
+      required: ['sufficient'],
+    },
+  };
+  const res = await ai.models.generateContent({
+    model: model(),
+    contents: [{ role: 'user', parts: [{ text: `Question: ${question.text[language] || question.text.en}\nApplicant answer: ${answer}` }] }],
+    config: {
+      systemInstruction: 'You are interviewing an applicant for a FiveM roleplay server. Judge if their answer is specific enough or dodges/is too vague. Reply only via judge_answer. ' + WL_BIAS,
+      tools: [{ functionDeclarations: [decl] }],
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: ['judge_answer'] } },
+      temperature: 0,
+    },
+  });
+  const call = (res.functionCalls || [])[0];
+  const a = (call && call.args) || {};
+  return { sufficient: !!a.sufficient, followUp: { en: a.followUpEn || 'Could you add more detail?', ar: a.followUpAr || 'ممكن تفاصيل أكثر؟' } };
+}
+
+// Score the completed interview against the owner criteria.
+async function whitelistScore(apiKey, { criteria, transcript, config }) {
+  const ai = new GoogleGenAI({ apiKey });
+  const critList = criteria.map((c) => `- ${c.id}: ${c.label.en}${c.description && c.description.en ? ' — ' + c.description.en : ''}`).join('\n');
+  const convo = transcript.map((tn) => `${tn.role === 'officer' ? 'Q' : 'A'}: ${tn.text}`).join('\n');
+  const decl = {
+    name: 'submit_score',
+    description: 'Return the structured evaluation of the applicant.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        scores: {
+          type: Type.ARRAY,
+          description: 'one entry per criterion id',
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              criterion: { type: Type.STRING },
+              score: { type: Type.INTEGER, description: '0-100' },
+              evidence: { type: Type.STRING, description: "a direct quote from the applicant's own words" },
+              abstained: { type: Type.BOOLEAN, description: 'true if unable to judge (then omit score)' },
+            },
+            required: ['criterion'],
+          },
+        },
+        flags: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, detail: { type: Type.STRING } }, required: ['type'] } },
+        summary: { type: Type.STRING },
+        recommendation: { type: Type.STRING, enum: ['approve', 'reject', 'review', 'reinterview'] },
+        confidence: { type: Type.NUMBER, description: '0-1 overall confidence' },
+      },
+      required: ['scores', 'summary', 'recommendation', 'confidence'],
+    },
+  };
+  const res = await ai.models.generateContent({
+    model: model(),
+    contents: [{ role: 'user', parts: [{ text: `Criteria:\n${critList}\n\nInterview transcript:\n${convo}` }] }],
+    config: {
+      systemInstruction: `You evaluate FiveM roleplay whitelist applicants. For EACH criterion give a 0-100 score and a direct evidence quote from the applicant. Flag copy_paste, likely_ai, contradiction, hostile, dodge, or underage where present. ${WL_BIAS} Reply only via submit_score.`,
+      tools: [{ functionDeclarations: [decl] }],
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: ['submit_score'] } },
+      temperature: 0,
+    },
+  });
+  const call = (res.functionCalls || [])[0];
+  if (!call || !call.args) throw new Error('no structured score returned');
+  return call.args;
+}
+
+module.exports = { name: 'gemini', interpret, ask, buildFunctionDeclaration, whitelistJudge, whitelistScore };

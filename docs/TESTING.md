@@ -2,14 +2,14 @@
 
 **Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-10
 
-> One command — `npm test` — boots the Firebase emulators and runs 88 tests: 48 platform integration tests over real HTTP against the real handlers, plus 40 Server Scanner tests (pure — parsers, detection, checks, the scan API, and a jsdom render of the dashboard). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators and runs 88 tests: 48 platform tests, 40 Server Scanner tests, and 51 Whitelist Officer tests (pure — parsers, detection, checks, the scan API, and a jsdom render of the dashboard). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 88 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 139 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```
@@ -40,6 +40,14 @@ tests/scanner-detect.test.js  framework/inventory/deps/jobs/items; ambiguous→u
 tests/scanner-checks.test.js  broken surfaces all planted faults; clean stays clean
 tests/scanner-api.test.js     /api/scan + status (auth/verify/gate/rate/store); bridge read-only
 tests/scanner-ui.test.js      jsdom drives the real dashboard render (EN/AR/filter/no-leak)
+tests/whitelist-config.test.js   config validation, defaults, unique slugs, auth/gate
+tests/whitelist-interview.test.js  interview state machine (follow-up cap, resume, EN/AR)
+tests/whitelist-score.test.js    evidence-mandatory, deterministic flags, BIAS guard, decide()
+tests/whitelist-apply.test.js    public flow e2e (EN/AR, resume, one-per-identity, rate limit, privacy)
+tests/whitelist-apply-ui.test.js jsdom render of app/apply.html (welcome→interview→submitted)
+tests/whitelist-review.test.js   owner queue/detail/decide/delete/stats, cross-tenant scoping
+tests/whitelist-ui.test.js       jsdom render of the dashboard Whitelist section (EN/AR)
+tests/whitelist-notify.test.js   Discord webhook interface (no-op unconfigured, rejects bad URL)
 ```
 
 ## What each area proves
@@ -54,7 +62,8 @@ tests/scanner-ui.test.js      jsdom drives the real dashboard render (EN/AR/filt
 8. **Rate limiting** — command #limit+1 within the window → 429 `RATE_LIMITED`; a second tenant is unaffected; ask mode counts (it spends provider money too). Signup: limit+1 from one IP → 429 while other IPs pass.
 9. **Email verification** — an unverified account gets 403 `EMAIL_UNVERIFIED` on *every* human endpoint; after the admin flips the flag, the **stale** token stays blocked (the claim lives in the token itself) and only a refreshed token unlocks — exactly the client's continue-button flow. Test helpers create verified users by default; `{verified:false}` opts into the gate, and every test signup presents a unique synthetic IP so the shared emulator's signup throttle never trips on suite volume.
 
-9. **Server Scanner** (40 tests, pure — no emulator) — the access layer's read-only guarantee and safety caps; parsers and detection against the four fixture servers (including ambiguous→unknown); the **broken fixture surfacing every planted fault while clean fixtures stay clean** (the headline scanner test); the scan API end-to-end (auth + verified email + pay-gate + rate limit + Firestore storage with **no raw source stored**); the **bridge read-only static assertion**; and a jsdom render of the actual dashboard Server Report code in EN + AR (RTL) with filtering and a no-secret-leak check. The last one is the durable stand-in for a browser screenshot.
+10. **Server Scanner** (40 tests, pure — no emulator) — the access layer's read-only guarantee and safety caps; parsers and detection against the four fixture servers (including ambiguous→unknown); the **broken fixture surfacing every planted fault while clean fixtures stay clean** (the headline scanner test); the scan API end-to-end (auth + verified email + pay-gate + rate limit + Firestore storage with **no raw source stored**); the **bridge read-only static assertion**; and a jsdom render of the actual dashboard Server Report code in EN + AR (RTL) with filtering and a no-secret-leak check. The last one is the durable stand-in for a browser screenshot.
+11. **Whitelist Officer** (51 tests) — config validation + unique slugs; the interview state machine (follow-up cap, resume-after-drop, EN/AR); **evidence-mandatory scoring** (evidence-free scores rejected), deterministic flags (copy-paste/hostile/dodge/underage), the confidence-gated `decide()`, and the **bias guard** (equivalent AR/EN answers treated identically); the full public applicant flow end-to-end (EN/AR interviews, resume, one-per-identity, per-IP rate limit, and a privacy check that the public config leaks no uid/criteria/webhook); the owner review flow (queue/detail/decide/delete/stats, cross-tenant scoping); jsdom renders of both `apply.html` and the dashboard section; and the Discord webhook interface.
 
 ## Conventions
 

@@ -20,6 +20,11 @@ function enqueue(tenantId, command) {
   return cmd;
 }
 
+function getPending(tenantId) {
+  const queue = q(tenantId);
+  return queue.pending.map(cmd => ({ id: => ccmd.i}))
+}
+
 // Returns all pending commands for a tenant and marks them in-flight.
 function drain(tenantId) {
   const queue = q(tenantId);

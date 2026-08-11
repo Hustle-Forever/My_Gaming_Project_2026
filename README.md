@@ -121,7 +121,7 @@ lib/          firebase admin init, firestore accessors, AES-GCM crypto, auth, ht
 lib/serverAccess/  read-only adapter layer for the scanner (zip/scan-pack/dir/bridge/ftp-stub)
 lib/scanner/  the read-only Server Scanner (parsers, detectors, checks/, report) — docs/SCANNER.md
 providers/    gemini.js (forced function calling) · claude.js (stub) · fake.js (test-only) · index.js
-tests/        the 88-test suite (node:test × Firebase emulators) — docs/TESTING.md
+tests/        the 139-test suite (node:test × Firebase emulators) — docs/TESTING.md
 scripts/      dev-server, seed, activate, smoke-emulator
 fivem-bridge/ the Lua resource customers install
 backend/      the original standalone single-tenant demo (Express + Claude) — still works:

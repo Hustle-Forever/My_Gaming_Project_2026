@@ -45,7 +45,7 @@ backend/      original standalone demo (Express + Claude BYOK) — still maintai
 docs/         this documentation + showcase page (served at /docs/)
 ```
 
-The **Server Scanner** (read-only FiveM analysis — foundation for the Doctor and AI Installer) has its own doc: [SCANNER.md](SCANNER.md).
+The **Server Scanner** (read-only FiveM analysis — foundation for the Doctor and AI Installer) has its own doc: [SCANNER.md](SCANNER.md). The **Whitelist Officer** (AI-interviewed applications, public `/apply/{slug}` + owner review) has [WHITELIST.md](WHITELIST.md); its engines live in `lib/whitelist/` and `app/apply.html` is the public page.
 
 ## Commands
 

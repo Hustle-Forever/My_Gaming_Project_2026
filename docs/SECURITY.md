@@ -50,6 +50,10 @@ The mechanism is intact: `active:false` → **402** on `/api/command` and `/api/
 - **CORS same-origin by default** — zero `Access-Control-*` headers unless `ALLOWED_ORIGIN` is deliberately set.
 - **Structured logs, no secrets:** single-line JSON with a request id; keys, tokens, and Authorization material never enter `fields`; command text is truncated. Provider errors are logged server-side and never surfaced to clients (suite-verified).
 
+## Public applicant endpoints (Whitelist Officer)
+
+The `/api/apply/*` endpoints are unauthenticated by design (applicants have no account), so they carry their own guards: per-IP throttle (`APPLY_RATE_LIMIT_PER_HOUR`, hashed IPs), body caps (shared `endpoint()` spine), slug validation, and **they expose nothing about the tenant beyond the server name + questions** (a test scans the config response for the uid/criteria/webhook). `appId→uid` resolves through a private index so the uid never reaches the applicant; resume tokens are stored hashed. Applicant data is treated as personal data: only owner-configured fields are stored, transcripts are never logged, and delete-application exists. The AI never auto-decides unless the owner set thresholds AND confidence is high AND no blocking flag fired. See [WHITELIST.md](WHITELIST.md).
+
 ## Proven by tests
 
 `npm test` (44) locks the walls in place: the **rogue-provider test** proves a non-whitelisted action from the AI itself can never be queued (with a live-control test so it can't pass vacuously); the key-leak scan proves no endpoint ever returns key material; the pay-gate cycle proves deactivation gates command + poll while ack settles; the hardening file pins headers, caps, CORS, and the secret-free health check. See [TESTING.md](TESTING.md).

@@ -99,6 +99,23 @@ Run a **read-only** server scan. `{ source:'upload', pack:{ files:[{ path, conte
 
 See [SCANNER.md](SCANNER.md) for the full pipeline, checks, and the read-only bridge commands.
 
+### Whitelist Officer — public applicant endpoints (unauthenticated, hard-limited)
+- `GET /api/apply/config?slug=` → `{serverName, questionCount, identityFields, languages}` only. Unknown/disabled slug → 404.
+- `POST /api/apply/start` `{slug, language, identity}` → `{appId, resumeToken, step}`. Per-IP throttle (`APPLY_RATE_LIMIT_PER_HOUR`), one active application per identity.
+- `POST /api/apply/answer` `{appId, resumeToken, text}` → `{step}`.
+- `POST /api/apply/submit` `{appId, resumeToken}` → `{status, overall}`.
+- `GET /api/apply/resume?appId=&resumeToken=` → `{step}`.
+Resume-token protected; `appId`→uid via a private index so the uid never reaches the applicant. 401 `AUTH_REQUIRED` on a bad token.
+
+### Whitelist Officer — owner endpoints (ID token verified + pay-gate)
+- `GET/POST /api/whitelist/config` — read/update the interview config (validated).
+- `GET /api/whitelist/applications` → queue; `?appId=` → full detail (transcript + evidence + flags).
+- `POST /api/whitelist/decide` `{appId, decision(approve|reject|reinterview|delete), note?}` → records `decidedBy`/`decidedAtMs`.
+- `GET /api/whitelist/stats` → received / backlog / approvalRate / avgDecisionMinutes.
+- `POST /api/whitelist/test-webhook` `{url}` → verifies a Discord webhook.
+
+See [WHITELIST.md](WHITELIST.md).
+
 ### `POST /api/stripe/webhook` — open (stub)
 Always 501 `NOT_IMPLEMENTED`. The seam where subscription events will flip `active` / `subscriptionStatus`.
 

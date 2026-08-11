@@ -11,8 +11,9 @@
 | page | URL | purpose |
 |---|---|---|
 | `app/index.html` | `/` | **one page, three views:** marketing site (hero, features, live demo, pricing, docs, FAQ) → auth modal (sign up / sign in) → operator console (Run/Ask, quick commands, full-screen voice overlay with live waveform, feed, setup notices). Views swap client-side; a persisted session skips straight to the console on load. |
-| `app/dashboard.html` | `/dashboard` | owner dashboard **in the same design system**: 4-step setup checklist, AI-key card, server card (masked token, `server.cfg` copy, inline rotate confirm, live last-seen), **Server Report** card (read-only scanner: folder picker → health gauge + identity + filterable findings + resource table + export + history — see [SCANNER.md](SCANNER.md)), plan card (`#plan` anchor), console + docs links |
+| `app/dashboard.html` | `/dashboard` | owner dashboard **in the same design system**: 4-step setup checklist, AI-key card, server card, **Server Report** card ([SCANNER.md](SCANNER.md)), **Whitelist Officer** card (queue / detail with transcript + evidence + decisions / setup / stats — [WHITELIST.md](WHITELIST.md)), plan card, console + docs links |
 | `app/firebase-config.js` | `/firebase-config.js` | ONE paste point for the public Firebase web config (both pages load it) |
+| `app/apply.html` | `/apply/{slug}` | **public** Whitelist Officer interview page — no account: welcome, identity, conversational AI interview (EN/AR, voice, localStorage resume), submitted. Reads only `/api/apply/*`. See [WHITELIST.md](WHITELIST.md) |
 | `docs/index.html` | `/docs/` | project showcase page (dev server serves it too) |
 
 `app/index.html` is `LOCAL_PREVIEW=false` (production) — sign-in uses the real backend + Firebase Auth, so it needs the deployed site or `npm run dev`; there is no offline demo mode. Rewrites live in `vercel.json` (which also sets the security headers/CSP); `scripts/dev-server.js` mirrors both locally. The old `app/app.js`/`style.css`/`voice.js` leftovers are deleted.
