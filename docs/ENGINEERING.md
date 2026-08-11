@@ -31,15 +31,21 @@ The bridge only ever makes **outbound** HTTP requests — customers never open p
 ## Repo layout
 
 ```
-api/          serverless functions        lib/        admin init, firestore, crypto, auth, http spine
-app/          index.html (site+console), dashboard.html, firebase-config.js
+api/          serverless functions (incl. scan.js, scan-status.js)
+lib/          admin init, firestore, crypto, auth, http spine
+lib/serverAccess/  read-only adapter layer (zip/scan-pack/dir/bridge/ftp-stub)
+lib/scanner/  the Server Scanner: parsers, detectors, checks/, report, orchestrator
+app/          index.html (site+console), dashboard.html (+ Server Report), firebase-config.js
 providers/    gemini.js · claude.js (stub) · fake.js (test-only rogue simulator) · index.js
-tests/        the suite (node:test × emulators) — see TESTING.md
+tests/        the suite (node:test × emulators; scanner tests are pure) — see TESTING.md
+tests/fixtures/servers/  qbcore-clean · esx-clean · broken · ambiguous
 scripts/      dev-server · seed · activate · smoke-emulator
-fivem-bridge/ the customer-installed resource
+fivem-bridge/ the customer-installed resource (server.lua + read-only scan.lua)
 backend/      original standalone demo (Express + Claude BYOK) — still maintained
 docs/         this documentation + showcase page (served at /docs/)
 ```
+
+The **Server Scanner** (read-only FiveM analysis — foundation for the Doctor and AI Installer) has its own doc: [SCANNER.md](SCANNER.md).
 
 ## Commands
 

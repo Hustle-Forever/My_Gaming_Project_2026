@@ -50,6 +50,7 @@ Appears: site hero (112px), auth screens (78px), console hero (104→44px when c
 - **Confirm steps** — inline red-bordered block that swaps into the layout (rotate token). Native `confirm()`/`alert()` are banned.
 - **Token box** — mono, masked `brg_••••…last4` with reveal-eye and copy; copy buttons flash a ✓ for 1.4s.
 - **Net banner** (dashboard) — sticky top strip, red-soft, message + Retry button. Retry re-runs the loader.
+- **Server Report** (dashboard scanner) — conic-gradient **health gauge** (lime ≥85 / amber ≥60 / red below), one-line verdict + severity count chips; **identity card** (2-col key/value with confidence); **severity filter pills**; **findings** as `<details>` rows with a severity dot, title, and an expanded why / how-to-fix / location body (locations in mono, LTR even under RTL); **resource table** (scrolls inside its own container); export-to-text and scan history. The verify screen's orb and all report copy are EN/AR; the whole card holds at 380px.
 
 ## Language & direction
 

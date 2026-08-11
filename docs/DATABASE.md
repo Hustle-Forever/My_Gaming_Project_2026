@@ -20,6 +20,7 @@
 | `lastPolledAt` | number\|absent | epoch ms of the last bridge poll, **throttled to one write per minute** (a 2.5s-polling bridge would otherwise write 34k times/day). Drives the dashboard "connected / last seen" indicator and checklist step 3 |
 | `firstCommandAt` | number\|absent | epoch ms of the first *queued* command (a `none` doesn't count); permanent once set. Checklist step 4 |
 | `rlWindowStart` / `rlCount` | number | per-tenant fixed-window rate-limit state, updated transactionally on `/api/command` (`RATE_LIMIT_PER_MIN`, default 30). Lives on the doc so limits hold across serverless instances |
+| `rlScanWindowStart` / `rlScanCount` | number | per-tenant scan rate-limit state (`/api/scan`, `SCAN_RATE_LIMIT_PER_HOUR`, default 20) |
 | `createdAt` / `updatedAt` | timestamp | server timestamps |
 
 ## `tenants/{uid}/commands/{cmdId}`
@@ -32,6 +33,24 @@
 | `createdAt` / `polledAt` | timestamp | |
 
 Lifecycle: `/api/command` writes `pending` → `/api/bridge/poll` batch-marks `inflight` and returns them (oldest first, ≤20) → `/api/bridge/ack` batch-deletes.
+
+## `tenants/{uid}/scans/{scanId}`
+
+Server-scanner reports (see [SCANNER.md](SCANNER.md)). **Derived data only — never raw customer source or secrets.**
+
+| field | type | notes |
+|---|---|---|
+| `status` | string | `complete` (upload scans finish in-request) |
+| `source` | string | `upload` / `bridge` |
+| `createdAt` / `createdAtMs` | timestamp / number | |
+| `identity` | map | framework/inventory/deps/jobs/items, each with evidence + confidence |
+| `health` | map | `{ score 0–100, verdict{en,ar}, counts }` |
+| `findings` | array | ranked findings; evidence carries **location** (resource/file/line), never verbatim source (sanitized in `report.js`) |
+| `model` | map | structural `serverModel`: resource names/sizes/deps/order + structure flags |
+
+## `rl_ip/{ipHash}`
+
+Per-IP signup throttle counters (`windowStart`, `count`, `expireAt`); keyed by a SHA-256 hash of the client IP — raw IPs are never stored. TTL-ready via `expireAt`.
 
 ## Design choices
 

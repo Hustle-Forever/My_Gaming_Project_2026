@@ -107,6 +107,8 @@ Full contract (request/response shapes, the `{ok:false,error:{code,message}}` en
 | `GET /api/tenant/me` | ID token | tenant status **without** the key (+ `lastPolledAt`, `firstCommandAt`) |
 | `POST /api/tenant/key` | ID token | encrypts + stores the AI key |
 | `POST /api/tenant/rotate-bridge-token` | ID token | new token, old one dies |
+| `POST /api/scan` | ID token (verified) | read-only server scan; stores derived report under `scans/{scanId}` — [SCANNER.md](docs/SCANNER.md) |
+| `GET /api/scan-status` | ID token (verified) | full report by `scanId`, or scan history |
 | `POST /api/stripe/webhook` | — | 501 stub (Stripe seam) |
 | `GET /api/health` | — | firestore probe + config booleans, no secrets |
 
@@ -116,8 +118,10 @@ Full contract (request/response shapes, the `{ok:false,error:{code,message}}` en
 api/          Vercel serverless functions (the platform backend)
 app/          static frontend: index.html (site+console), dashboard.html, firebase-config.js
 lib/          firebase admin init, firestore accessors, AES-GCM crypto, auth, http spine
+lib/serverAccess/  read-only adapter layer for the scanner (zip/scan-pack/dir/bridge/ftp-stub)
+lib/scanner/  the read-only Server Scanner (parsers, detectors, checks/, report) — docs/SCANNER.md
 providers/    gemini.js (forced function calling) · claude.js (stub) · fake.js (test-only) · index.js
-tests/        the 48-test suite (node:test × Firebase emulators) — docs/TESTING.md
+tests/        the 88-test suite (node:test × Firebase emulators) — docs/TESTING.md
 scripts/      dev-server, seed, activate, smoke-emulator
 fivem-bridge/ the Lua resource customers install
 backend/      the original standalone single-tenant demo (Express + Claude) — still works:

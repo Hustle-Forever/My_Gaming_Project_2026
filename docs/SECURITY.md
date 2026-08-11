@@ -15,6 +15,10 @@
 
 **Explicitly out of scope, forever:** shell/file/OS access, `eval`/dynamic action names, arbitrary HTTP from the bridge, anything affecting other servers or players' machines.
 
+### Server Scanner is read-only by construction
+
+The scanner ([SCANNER.md](SCANNER.md)) reads a customer's server; it never writes, moves, or deletes. Enforced, not promised: the access layer exposes only `listFiles/readFile/stat/exists` (no write method exists); only text files are ever loaded and binaries never leave the customer's machine; path-traversal and symlinks are dropped; and the bridge's `scan.lua` uses only read APIs — a test statically asserts the whole `fivem-bridge/` directory contains no `SaveResourceFile`/`io.write`/`os.remove`/`os.rename`/`os.execute`/`io.popen`. Stored scans carry the derived report only — **never raw source or secrets** (findings hold locations, and a storage-time sanitizer redacts secret-shaped evidence; asserted by tests).
+
 ## 2. Key custody
 
 - Customer AI keys: AES-256-GCM (`lib/crypto.js`) under `ENCRYPTION_KEY` (32 bytes, Vercel env). Decrypted only inside `/api/command`, per request; never returned to a client, never logged.

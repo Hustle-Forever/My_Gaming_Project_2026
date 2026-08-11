@@ -88,6 +88,17 @@ Pay-gated (402 when inactive). Stamps `lastPolledAt` on the tenant, throttled to
 `{ ids: [...] }` (≤50) → deletes executed commands: `{ ok:true, acked }`.
 **Deliberately not pay-gated** so in-flight commands can settle after deactivation.
 
+### `POST /api/scan` — ID token (verified) + pay-gate
+Run a **read-only** server scan. `{ source:'upload', pack:{ files:[{ path, content?, size }] } }` — the pack is built client-side from the owner's chosen server folder (text files only; binaries are listed by name+size but never uploaded). Verified-auth + pay-gate + per-tenant rate limit (`SCAN_RATE_LIMIT_PER_HOUR`, default 20/h). Stores the derived report at `tenants/{uid}/scans/{scanId}` — **never raw source**.
+- 200 `{ ok:true, scanId, status:'complete', health, identity, findingCount }`
+- 400 `BAD_INPUT` (no pack) · 402 `PLAN_INACTIVE` · 403 `EMAIL_UNVERIFIED` · 413 `PAYLOAD_TOO_LARGE` (server too large) · 429 `RATE_LIMITED`
+
+### `GET /api/scan-status` — ID token (verified) + pay-gate
+`?scanId=…` → the full stored report `{ ok:true, scan:{ identity, health, findings, model, … } }`. Without `scanId` → the tenant's scan history: `{ ok:true, scans:[{ scanId, createdAtMs, source, health, framework }] }`.
+- 404 `NOT_FOUND` (no such scan) · 402 · 403 per the table.
+
+See [SCANNER.md](SCANNER.md) for the full pipeline, checks, and the read-only bridge commands.
+
 ### `POST /api/stripe/webhook` — open (stub)
 Always 501 `NOT_IMPLEMENTED`. The seam where subscription events will flip `active` / `subscriptionStatus`.
 

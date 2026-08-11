@@ -262,10 +262,10 @@ footer .fmark{width:30px;height:30px;border-radius:9px;margin:0 auto 12px;backgr
   <div class="eyebrow reveal">Where it stands</div>
   <h2 class="reveal">By the numbers</h2>
   <div class="stats">
-    <div class="stat reveal"><div class="num" data-count="63" data-suffix="/63">0</div><div class="lab">Automated checks green</div></div>
-    <div class="stat reveal"><div class="num" data-count="10">0</div><div class="lab">Error codes, one envelope</div></div>
+    <div class="stat reveal"><div class="num" data-count="88" data-suffix="/88">0</div><div class="lab">Automated tests green</div></div>
+    <div class="stat reveal"><div class="num" data-count="8">0</div><div class="lab">Scanner checks</div></div>
     <div class="stat reveal"><div class="num" data-count="2">0</div><div class="lab">Languages, full RTL</div></div>
-    <div class="stat reveal"><div class="num" data-count="0">0</div><div class="lab">Servers broken</div></div>
+    <div class="stat reveal"><div class="num" data-count="0">0</div><div class="lab">Files ever written to your server</div></div>
   </div>
 </section>
 
@@ -280,7 +280,8 @@ footer .fmark{width:30px;height:30px;border-radius:9px;margin:0 auto 12px;backgr
   </div>
   <div class="road">
     <div class="step done reveal"><span class="d"></span><div class="top"><h4>Foundation</h4><span class="st done">Done</span></div><p>Accounts, login, pay-gate, encrypted keys, dashboard, the app, and the Run pillar — built and passing tests.</p></div>
-    <div class="step done reveal"><span class="d"></span><div class="top"><h4>Hardening &amp; proof</h4><span class="st done">Done</span></div><p>One design system across site, console, and dashboard; setup checklist; error envelope + rate limiting + security headers; 63 automated checks including the rogue-AI whitelist proof.</p></div>
+    <div class="step done reveal"><span class="d"></span><div class="top"><h4>Hardening &amp; proof</h4><span class="st done">Done</span></div><p>One design system across site, console, and dashboard; email verification; error envelope + rate limiting + security headers; 88 automated tests including the rogue-AI whitelist proof.</p></div>
+    <div class="step done reveal"><span class="d"></span><div class="top"><h4>Server Scanner (read-only)</h4><span class="st done">Done</span></div><p>M2 reads a server and understands it — framework, inventory, jobs, every resource, and a ranked list of problems in plain language. Strictly read-only. The shared foundation for the Doctor and the AI Installer.</p></div>
     <div class="step active reveal"><span class="d"></span><div class="top"><h4>Phase 0 — Go live</h4><span class="st active">In progress</span></div><p>Deploy to Firebase + Vercel and land one real command on a live server.</p></div>
     <div class="step reveal"><span class="d"></span><div class="top"><h4>Phase 1 — De-risk the installer</h4><span class="st next">Next</span></div><p>Prove we can safely read, back up, change, restart, and roll back server files — no AI yet.</p></div>
     <div class="step reveal"><span class="d"></span><div class="top"><h4>Phase 2 — MVP installer</h4><span class="st later">Later</span></div><p>One feature, described in plain language, installed after approval on a test server.</p></div>
@@ -347,7 +348,7 @@ const countio=new IntersectionObserver((es)=>es.forEach(e=>{if(!e.isIntersecting
 document.querySelectorAll('[data-count]').forEach(el=>countio.observe(el));
 
 // roadmap ring (~ Foundation + Hardening done, Phase 0 underway of 8 milestones)
-const ring=document.getElementById('ringfill');const C=251;const pctVal=.3;
+const ring=document.getElementById('ringfill');const C=251;const pctVal=.35;
 const ringio=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){ring.style.transition='stroke-dashoffset 1.1s ease';ring.style.strokeDashoffset=C*(1-pctVal);ringio.unobserve(e.target)}}),{threshold:.4});
 ringio.observe(document.querySelector('.ring'));
 </script>
