@@ -188,6 +188,60 @@ pre.cfg{background:var(--bg);border:1px solid var(--line);border-radius:12px;pad
 .rp-hlabel{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right}
 
+/* whitelist officer */
+.wl-tabs{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px;margin:14px 0}
+.wl-tabs button{border:0;background:transparent;color:var(--dim);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer}
+.wl-tabs button.on{background:var(--surface-3);color:var(--text)}
+.wl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.wl-stat{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:10px 8px;text-align:center}
+.wl-stat .n{font-family:var(--display);font-size:20px;font-weight:700}
+.wl-stat .l{font-size:9.5px;color:var(--faint);margin-top:1px;text-transform:uppercase;letter-spacing:.4px}
+@media(max-width:420px){.wl-stats{grid-template-columns:1fr 1fr}}
+.wl-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+.wl-row:hover{border-color:var(--line-2)}
+.wl-badge{width:38px;height:38px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:14px}
+.wl-row .who{flex:1;min-width:0}
+.wl-row .who b{font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl-row .who span{font-size:11px;color:var(--faint)}
+.wl-st{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:99px}
+.wl-st.submitted{background:var(--violet-soft);color:var(--violet)}
+.wl-st.approved{background:var(--lime-soft);color:var(--lime)}
+.wl-st.rejected{background:rgba(240,119,111,.14);color:var(--red)}
+.wl-st.reinterview{background:rgba(242,193,78,.16);color:var(--amber)}
+.wl-flag{font-size:9px;color:var(--red)}
+.wl-empty{text-align:center;color:var(--faint);font-size:13px;padding:20px 0}
+.wl-block{margin-top:16px}
+.wl-h{font-size:13px;font-weight:600;margin-bottom:3px}
+.wl-hint{font-size:11.5px;color:var(--faint);margin-bottom:9px;line-height:1.5}
+.wl-item{display:flex;gap:8px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;font-size:12.5px}
+.wl-item textarea{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);font-family:var(--sans);font-size:12.5px;resize:none;line-height:1.5}
+.wl-item .rm{color:var(--faint);cursor:pointer;flex:0 0 auto;font-size:15px;line-height:1}
+.wl-add{font-size:12px;color:var(--lime);cursor:pointer;font-weight:600}
+.wl-link{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:9px 8px 9px 12px;margin-top:10px;direction:ltr}
+.wl-link code{flex:1;min-width:0;font-family:var(--mono);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--lime)}
+/* detail */
+.wl-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.wl-back{font-size:12.5px;color:var(--dim);cursor:pointer;margin-bottom:12px;display:inline-block}
+.wl-score-big{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.wl-gauge{width:64px;height:64px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:22px;background:conic-gradient(var(--wgc,var(--lime)) calc(var(--wgp,0)*1%),var(--surface-3) 0);position:relative}
+.wl-gauge::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--surface)}
+.wl-gauge span{position:relative;z-index:1}
+.wl-crit{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:8px}
+.wl-crit .ch{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+.wl-crit .cs{font-family:var(--display);font-weight:700}
+.wl-crit .ev{font-size:11.5px;color:var(--dim);margin-top:5px;border-inline-start:2px solid var(--violet);padding-inline-start:9px;font-style:italic}
+.wl-tx{max-height:280px;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px;margin:10px 0;display:flex;flex-direction:column;gap:8px}
+.wl-tx .tb{max-width:88%;padding:8px 11px;border-radius:12px;font-size:12px;line-height:1.5}
+.wl-tx .tb.o{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line)}
+.wl-tx .tb.a{align-self:flex-end;background:var(--lime);color:var(--lime-ink)}
+.wl-decide{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.wl-decide button{border:0;border-radius:11px;padding:12px 6px;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer}
+.wl-decide .ap{background:var(--lime);color:var(--lime-ink)}
+.wl-decide .rj{background:rgba(240,119,111,.14);color:var(--red)}
+.wl-decide .re{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.wl-flags-box{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.wl-flags-box .fl{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:99px;background:rgba(240,119,111,.14);color:var(--red)}
+
 /* plan */
 .plist{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .plist li{display:flex;gap:8px;font-size:13px;color:var(--dim);align-items:flex-start}
@@ -393,6 +447,44 @@ html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right
       <div id="rpHistory" class="rp-history hide"></div>
     </div>
 
+    <!-- 3.6 · whitelist officer -->
+    <div class="card" id="whitelist">
+      <h2><span class="ci v"><svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span data-i="wlTitle">Whitelist Officer</span></h2>
+      <p class="sub" data-i="wlSub">An AI interviews applicants (EN/AR), scores them against your criteria with quoted evidence, and hands you one-click decisions. You always decide.</p>
+
+      <div class="wl-tabs">
+        <button class="on" id="wlTabQueue" onclick="wlTab('queue')" data-i="wlQueue">Queue</button>
+        <button id="wlTabSetup" onclick="wlTab('setup')" data-i="wlSetup">Setup</button>
+      </div>
+
+      <!-- stats strip -->
+      <div class="wl-stats" id="wlStats"></div>
+
+      <!-- QUEUE -->
+      <div id="wlQueueView">
+        <div id="wlList"></div>
+      </div>
+
+      <!-- SETUP -->
+      <div id="wlSetupView" class="hide">
+        <div class="rw"><div><div class="lb" data-i="wlEnable">Enable applications</div><div class="sb" data-i="wlEnableSub">Turn on the public interview page</div></div>
+          <div class="seg"><button id="wlOn" onclick="wlSetEnabled(true)" data-i="on2">On</button><button id="wlOff" class="on" onclick="wlSetEnabled(false)" data-i="off2">Off</button></div></div>
+        <div class="wl-link" id="wlLinkRow" style="display:none">
+          <code id="wlLink">—</code>
+          <div class="icb" onclick="wlCopyLink(this)" title="Copy"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V5a1 1 0 011-1h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="wl-block"><div class="wl-h" data-i="wlCriteria">Passing criteria</div><div class="wl-hint" data-i="wlCriteriaHint">What makes a good applicant, in your words. The AI scores each with evidence.</div><div id="wlCriteria"></div></div>
+        <div class="wl-block"><div class="wl-h" data-i="wlQuestions">Interview questions</div><div id="wlQuestions"></div></div>
+        <div class="wl-block"><div class="wl-h" data-i="wlDiscord">Discord webhook (optional)</div>
+          <div class="inrow"><input id="wlWebhook" type="text" placeholder="https://discord.com/api/webhooks/…"><button class="btn btn-g" onclick="wlTestWebhook()" data-i="wlTest">Test</button></div>
+          <div class="okline" id="wlWebhookMsg"></div></div>
+        <div class="okline" id="wlSetupMsg"></div>
+      </div>
+
+      <!-- DETAIL (overlay within card) -->
+      <div id="wlDetail" class="wl-detail hide"></div>
+    </div>
+
     <!-- 4 · plan -->
     <div class="card" id="plan">
       <h2><span class="ci p"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span data-i="plTitle">Plan</span></h2>
@@ -508,7 +600,17 @@ const I18N={
   rpConf:"confidence",rpAll:"All",rpNothing:"No files found in that folder — pick your server's resources folder.",
   rpTooBig:"That folder is too large to scan in one go.",rpFailed:"Scan failed — try again.",
   rpClean:"No problems found. Nice and tidy.",rpWhy:"Why it matters",rpFix:"How to fix",rpEvidence:"Where",
-  rpHistoryLbl:"Past scans",rpStarted:"started",rpStopped:"stopped"},
+  rpHistoryLbl:"Past scans",rpStarted:"started",rpStopped:"stopped",
+  wlTitle:"Whitelist Officer",wlSub:"An AI interviews applicants (EN/AR), scores them against your criteria with quoted evidence, and hands you one-click decisions. You always decide.",
+  wlQueue:"Queue",wlSetup:"Setup",wlEnable:"Enable applications",wlEnableSub:"Turn on the public interview page",
+  on2:"On",off2:"Off",wlCriteria:"Passing criteria",wlCriteriaHint:"What makes a good applicant, in your words. The AI scores each with evidence.",
+  wlQuestions:"Interview questions",wlDiscord:"Discord webhook (optional)",wlTest:"Test",
+  wlReceived:"Received",wlBacklog:"Backlog",wlApproval:"Approved",wlAvg:"Avg decide",
+  wlEmpty:"No applications yet. Share your link to start receiving them.",wlAddQ:"+ Add question",wlAddC:"+ Add criterion",
+  wlBack:"← Back to queue",wlTranscript:"Transcript",wlScoring:"Scoring",wlFlags:"Flags",wlSummary:"Summary",wlRecommend:"AI recommends",
+  wlApprove:"Approve",wlReject:"Reject",wlReinterview:"Re-interview",wlDelete:"Delete application",
+  wlSaved:"Saved ✓",wlSaveErr:"Couldn’t save.",wlWebhookOk:"Sent ✓ — check your Discord channel.",wlWebhookBad:"Delivery failed — check the URL.",
+  wlDecided:"Decision saved ✓",wlNoteph:"Optional note…",wlCopied:"Copied ✓",wlNever:"never",wlMin:"m",wlEvidenceLbl:"Evidence"},
  ar:{dashTitle:"لوحة التحكم",active:"مفعّل",inactive:"موقوف",
   authTitleUp:"أنشئ حسابك",authSubUp:"ابدأ مجانًا. بدون بطاقة.",
   authTitleIn:"أهلًا من جديد",authSubIn:"سجّل الدخول لإدارة سيرفرك.",
@@ -555,7 +657,17 @@ const I18N={
   rpConf:"ثقة",rpAll:"الكل",rpNothing:"لا ملفات في هذا المجلد — اختر مجلد سيرفرك الخاص بسيرفرك.",
   rpTooBig:"هذا المجلد أكبر من أن يُفحص دفعة واحدة.",rpFailed:"فشل الفحص — حاول مرة ثانية.",
   rpClean:"لا مشاكل. كل شيء مرتّب.",rpWhy:"لماذا يهم",rpFix:"كيف تُصلح",rpEvidence:"الموضع",
-  rpHistoryLbl:"فحوصات سابقة",rpStarted:"مُشغَّل",rpStopped:"متوقف"}};
+  rpHistoryLbl:"فحوصات سابقة",rpStarted:"مُشغَّل",rpStopped:"متوقف",
+  wlTitle:"ضابط القبول",wlSub:"ذكاء اصطناعي يقابل المتقدمين (عربي/إنجليزي)، يقيّمهم وفق معاييرك مع اقتباس الأدلة، ويعطيك قرارات بضغطة. القرار دائمًا لك.",
+  wlQueue:"القائمة",wlSetup:"الإعداد",wlEnable:"تفعيل التقديم",wlEnableSub:"شغّل صفحة المقابلة العامة",
+  on2:"تشغيل",off2:"إيقاف",wlCriteria:"معايير القبول",wlCriteriaHint:"ما الذي يجعل المتقدم جيدًا، بكلماتك. الذكاء يقيّم كلًّا منها بدليل.",
+  wlQuestions:"أسئلة المقابلة",wlDiscord:"ويبهوك ديسكورد (اختياري)",wlTest:"اختبار",
+  wlReceived:"وردت",wlBacklog:"معلّقة",wlApproval:"مقبولة",wlAvg:"م. القرار",
+  wlEmpty:"لا طلبات بعد. شارك رابطك لتبدأ استقبالها.",wlAddQ:"+ أضف سؤالًا",wlAddC:"+ أضف معيارًا",
+  wlBack:"← رجوع للقائمة",wlTranscript:"النص",wlScoring:"التقييم",wlFlags:"تنبيهات",wlSummary:"الخلاصة",wlRecommend:"توصية الذكاء",
+  wlApprove:"قبول",wlReject:"رفض",wlReinterview:"إعادة مقابلة",wlDelete:"حذف الطلب",
+  wlSaved:"تم الحفظ ✓",wlSaveErr:"تعذّر الحفظ.",wlWebhookOk:"أُرسل ✓ — تحقق من قناتك.",wlWebhookBad:"فشل الإرسال — تحقق من الرابط.",
+  wlDecided:"تم حفظ القرار ✓",wlNoteph:"ملاحظة اختيارية…",wlCopied:"تم النسخ ✓",wlNever:"لا يوجد",wlMin:"د",wlEvidenceLbl:"الدليل"}};
 
 const $=i=>document.getElementById(i), t=k=>I18N[LANG][k];
 const SUN='<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -672,7 +784,7 @@ async function enter(){
   if(!ok)return;
   $("netbar").classList.remove("show");
   $("auth").classList.remove("show");$("boot").classList.add("hide");
-  $("dash").classList.remove("hide");render();startRefresh();rpLoadHistory();
+  $("dash").classList.remove("hide");render();startRefresh();rpLoadHistory();wlLoad();
  }catch(e){
   $("boot").classList.add("hide");
   $("auth").classList.remove("show");$("dash").classList.remove("hide");
@@ -898,6 +1010,99 @@ function rpExport(){
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="m2-server-report.txt";a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
+
+/* ===== Whitelist Officer ===== */
+let WLCFG=null, WLVIEW="queue", WLAPP=null;
+function wlTab(v){WLVIEW=v;$("wlTabQueue").classList.toggle("on",v==="queue");$("wlTabSetup").classList.toggle("on",v==="setup");
+ $("wlQueueView").classList.toggle("hide",v!=="queue");$("wlSetupView").classList.toggle("hide",v!=="setup");
+ $("wlDetail").classList.add("hide");
+ if(v==="queue")wlLoadQueue();else wlRenderSetup();}
+async function wlLoad(){
+ try{const r=await authedFetch("/api/whitelist/config");if(r.status===401)return sessionExpired();if(r.status===403)return;
+  const d=await r.json().catch(()=>({}));if(r.ok&&d.config){WLCFG=d.config;wlRenderSetup();wlLoadQueue();wlLoadStats();}}catch(e){}
+}
+async function wlLoadStats(){
+ try{const r=await authedFetch("/api/whitelist/stats");const d=await r.json().catch(()=>({}));if(!r.ok)return;
+  const s=d.stats;const avg=s.avgDecisionMinutes==null?t("wlNever"):s.avgDecisionMinutes+t("wlMin");
+  $("wlStats").innerHTML=[[s.received,"wlReceived"],[s.backlog,"wlBacklog"],[s.approvalRate+"%","wlApproval"],[avg,"wlAvg"]]
+   .map(([n,l])=>`<div class="wl-stat"><div class="n">${esc(n)}</div><div class="l">${t(l)}</div></div>`).join("");
+ }catch(e){}
+}
+async function wlLoadQueue(){
+ try{const r=await authedFetch("/api/whitelist/applications");const d=await r.json().catch(()=>({}));if(!r.ok)return;
+  const apps=d.applications||[];
+  if(!apps.length){$("wlList").innerHTML=`<div class="wl-empty">${t("wlEmpty")}</div>`;return;}
+  $("wlList").innerHTML=apps.map(a=>{
+   const col=a.overall>=70?"var(--lime-soft)":a.overall>=40?"rgba(242,193,78,.16)":"rgba(240,119,111,.14)";
+   const tc=a.overall>=70?"var(--lime)":a.overall>=40?"var(--amber)":"var(--red)";
+   const idv=Object.values(a.identity||{})[0]||"—";
+   const flags=a.flags&&a.flags.length?`<span class="wl-flag">⚑ ${a.flags.length}</span>`:"";
+   return `<div class="wl-row" onclick="wlOpen('${a.appId}')"><span class="wl-badge" style="background:${col};color:${tc}">${a.overall}</span>
+    <div class="who"><b>${esc(idv)}</b><span>${(a.language||"en").toUpperCase()} ${flags}</span></div>
+    <span class="wl-st ${a.status}">${a.status}</span></div>`;
+  }).join("");
+ }catch(e){}
+}
+async function wlOpen(appId){
+ try{const r=await authedFetch("/api/whitelist/applications?appId="+encodeURIComponent(appId));const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.application)return;WLAPP=d.application;wlRenderDetail();}catch(e){}
+}
+function wlRenderDetail(){
+ const a=WLAPP;$("wlQueueView").classList.add("hide");$("wlSetupView").classList.add("hide");$("wlDetail").classList.remove("hide");
+ const col=a.overall>=70?"var(--lime)":a.overall>=40?"var(--amber)":"var(--red)";
+ const crits=WLCFG?WLCFG.criteria:[];
+ const critName=id=>{const c=crits.find(x=>x.id===id);return c?tr(c.label):id;};
+ const scoreHtml=(a.scores||[]).map(s=>`<div class="wl-crit"><div class="ch"><span>${esc(critName(s.criterion))}</span><span class="cs">${s.abstained?"—":s.score}</span></div><div class="ev">“${esc(s.evidence||"")}”</div></div>`).join("");
+ const flagsHtml=(a.flags||[]).length?`<div class="wl-flags-box">${a.flags.map(f=>`<span class="fl">⚑ ${esc(f.type)}</span>`).join("")}</div>`:"";
+ const tx=(a.transcript||[]).map(m=>`<div class="tb ${m.role==="officer"?"o":"a"}">${esc(m.text)}</div>`).join("");
+ $("wlDetail").innerHTML=`<span class="wl-back" onclick="wlTab('queue')">${t("wlBack")}</span>
+  <div class="wl-score-big"><div class="wl-gauge" style="--wgp:${a.overall};--wgc:${col}"><span>${a.overall}</span></div>
+   <div><div style="font-size:13px;font-weight:600">${esc(Object.entries(a.identity||{}).map(([k,v])=>k+": "+v).join(" · "))}</div>
+   <div style="font-size:11.5px;color:var(--faint);margin-top:3px">${t("wlRecommend")}: <b style="color:var(--text)">${esc(a.recommendation||"review")}</b></div></div></div>
+  ${flagsHtml}
+  <div class="wl-h">${t("wlSummary")}</div><div class="wl-hint">${esc(a.summary||"")}</div>
+  <div class="wl-h" style="margin-top:12px">${t("wlScoring")}</div>${scoreHtml}
+  <div class="wl-h" style="margin-top:12px">${t("wlTranscript")}</div><div class="wl-tx">${tx}</div>
+  <input id="wlNote" type="text" placeholder="${t("wlNoteph")}" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text);font-family:var(--sans);font-size:14px;padding:11px;outline:0;margin-top:6px">
+  <div class="wl-decide"><button class="ap" onclick="wlDecide('approve')">${t("wlApprove")}</button><button class="rj" onclick="wlDecide('reject')">${t("wlReject")}</button><button class="re" onclick="wlDecide('reinterview')">${t("wlReinterview")}</button></div>
+  <button class="btn btn-r" style="width:100%;margin-top:8px" onclick="wlDecide('delete')">${t("wlDelete")}</button>
+  <div class="okline" id="wlDecMsg"></div>`;
+}
+async function wlDecide(decision){
+ if(!WLAPP)return;const note=$("wlNote")?$("wlNote").value.trim():"";
+ try{const r=await authedFetch("/api/whitelist/decide",{method:"POST",body:JSON.stringify({appId:WLAPP.appId,decision,note})});
+  if(r.status===401)return sessionExpired();
+  if(r.ok){flash($("wlDecMsg"),"wlDecided");setTimeout(()=>{wlTab("queue");wlLoadStats();},700);}else flash($("wlDecMsg"),"wlSaveErr",true);}catch(e){flash($("wlDecMsg"),"wlSaveErr",true);}
+}
+function wlRenderSetup(){
+ if(!WLCFG)return;
+ $("wlOn").classList.toggle("on",!!WLCFG.enabled);$("wlOff").classList.toggle("on",!WLCFG.enabled);
+ const link=location.origin+"/apply/"+WLCFG.slug;
+ $("wlLinkRow").style.display=WLCFG.enabled?"flex":"none";$("wlLink").textContent=link;
+ $("wlCriteria").innerHTML=(WLCFG.criteria||[]).map((c,i)=>`<div class="wl-item"><textarea rows="2" oninput="wlEdit('criteria',${i},this.value)">${esc(tr(c.label))}</textarea><span class="rm" onclick="wlRemove('criteria',${i})">✕</span></div>`).join("")+`<span class="wl-add" onclick="wlAdd('criteria')">${t("wlAddC")}</span>`;
+ $("wlQuestions").innerHTML=(WLCFG.questions||[]).map((q,i)=>`<div class="wl-item"><textarea rows="2" oninput="wlEdit('questions',${i},this.value)">${esc(tr(q.text))}</textarea><span class="rm" onclick="wlRemove('questions',${i})">✕</span></div>`).join("")+`<span class="wl-add" onclick="wlAdd('questions')">${t("wlAddQ")}</span>`;
+ $("wlWebhook").value=WLCFG.discordWebhook||"";
+}
+function wlEdit(kind,i,val){const key=kind==="criteria"?"label":"text";WLCFG[kind][i][key]={en:val,ar:val};clearTimeout(WLCFG._t);WLCFG._t=setTimeout(wlSave,700);}
+function wlAdd(kind){const blank=kind==="criteria"?{label:{en:"",ar:""},description:{en:"",ar:""}}:{text:{en:"",ar:""}};WLCFG[kind]=[...(WLCFG[kind]||[]),blank];wlRenderSetup();}
+function wlRemove(kind,i){WLCFG[kind]=WLCFG[kind].filter((_,j)=>j!==i);wlRenderSetup();wlSave();}
+async function wlSetEnabled(on){WLCFG.enabled=on;wlRenderSetup();await wlSave();}
+async function wlSave(){
+ const patch={enabled:WLCFG.enabled,
+  criteria:(WLCFG.criteria||[]).filter(c=>tr(c.label).trim()).map(c=>({label:c.label,description:c.description||{en:"",ar:""}})),
+  questions:(WLCFG.questions||[]).filter(q=>tr(q.text).trim()).map(q=>({text:q.text})),
+  discordWebhook:$("wlWebhook")?$("wlWebhook").value.trim():WLCFG.discordWebhook};
+ if(!patch.criteria.length||!patch.questions.length)return;
+ try{const r=await authedFetch("/api/whitelist/config",{method:"POST",body:JSON.stringify(patch)});
+  if(r.status===401)return sessionExpired();const d=await r.json().catch(()=>({}));
+  if(r.ok&&d.config){WLCFG={...d.config,_t:WLCFG._t};flash($("wlSetupMsg"),"wlSaved");}else flash($("wlSetupMsg"),"wlSaveErr",true);}catch(e){}
+}
+async function wlTestWebhook(){
+ const url=$("wlWebhook").value.trim();if(!url)return;
+ try{const r=await authedFetch("/api/whitelist/test-webhook",{method:"POST",body:JSON.stringify({url})});const d=await r.json().catch(()=>({}));
+  if(r.ok&&d.delivered){flash($("wlWebhookMsg"),"wlWebhookOk");wlSave();}else flash($("wlWebhookMsg"),"wlWebhookBad",true);}catch(e){flash($("wlWebhookMsg"),"wlWebhookBad",true);}
+}
+function wlCopyLink(btn){copyText(location.origin+"/apply/"+WLCFG.slug,btn);flash($("wlSetupMsg"),"wlCopied");}
 
 /* ---- boot ---- */
 document.addEventListener("mirsal-auth-ready",async(e)=>{

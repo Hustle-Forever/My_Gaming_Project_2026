@@ -32,6 +32,10 @@ const API_ROUTES = {
   '/api/apply/answer': './api/apply/answer',
   '/api/apply/submit': './api/apply/submit',
   '/api/apply/resume': './api/apply/resume',
+  '/api/whitelist/applications': './api/whitelist/applications',
+  '/api/whitelist/decide': './api/whitelist/decide',
+  '/api/whitelist/stats': './api/whitelist/stats',
+  '/api/whitelist/test-webhook': './api/whitelist/test-webhook',
 };
 
 const MIME = {
