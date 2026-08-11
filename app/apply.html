@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0B0E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25' r='75%25'%3E%3Cstop offset='0' stop-color='%237FE9EE'/%3E%3Cstop offset='.55' stop-color='%23A98BFB'/%3E%3Cstop offset='1' stop-color='%23C4F042'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">
+<title>Whitelist Application</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#0A0B0E; --bg-2:#0C0E12; --surface:#15181E; --surface-2:#1B1F27; --surface-3:#22262F;
+ --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
+ --text:#F4F6F8; --dim:#9AA1AB; --faint:#616874;
+ --lime:#C4F042; --lime-ink:#16240A; --lime-soft:rgba(196,240,66,.13);
+ --violet:#A98BFB; --violet-soft:rgba(169,139,251,.15); --pink:#F3A5C6; --red:#F0776F;
+ --display:"Space Grotesk",-apple-system,sans-serif;
+ --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,"Noto Sans Arabic",sans-serif;
+}
+[data-theme="light"]{--bg:#F4F5F2;--bg-2:#fff;--surface:#fff;--surface-2:#F3F4F6;--surface-3:#E7E9ED;--line:rgba(0,0,0,.09);--line-2:rgba(0,0,0,.16);--text:#161A20;--dim:#5B636E;--faint:#8A929C;--lime:#8FBE18;--lime-ink:#fff;--lime-soft:rgba(120,165,20,.15);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.6;display:flex;justify-content:center;min-height:100dvh}
+.shell{width:100%;max-width:520px;min-height:100dvh;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--bg-2),var(--bg) 42%);border-inline:1px solid var(--line)}
+@media(max-width:540px){.shell{border-inline:0}}
+.orb-wrap{position:relative}
+.orb{position:absolute;inset:0;border-radius:50%;background:radial-gradient(60% 55% at 32% 30%,#7FE9EE 0,transparent 55%),radial-gradient(55% 55% at 72% 32%,#C7A3FF 0,transparent 55%),radial-gradient(60% 60% at 66% 74%,#F3A5C6 0,transparent 55%),radial-gradient(65% 65% at 30% 72%,#C4F042 0,transparent 58%),#0f1219;filter:blur(1px) saturate(1.2);animation:spin 15s linear infinite;box-shadow:0 0 40px rgba(150,120,255,.3),inset 0 0 24px rgba(0,0,0,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+.bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line)}
+.mk{width:28px;height:28px;border-radius:9px;position:relative;overflow:hidden;flex:0 0 auto;background:conic-gradient(from 210deg,#5CE1E6,#A98BFB,#F3A5C6,#C4F042,#5CE1E6)}
+.mk::after{content:"";position:absolute;inset:3px;border-radius:6px;background:var(--bg)}
+.bar b{font-family:var(--display);font-size:15px;margin-inline-end:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lng{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);flex:0 0 auto}
+.lng button{border:0;background:transparent;color:var(--faint);font-size:11.5px;font-weight:600;padding:7px;min-width:29px;cursor:pointer;font-family:var(--sans)}
+.lng button.on{background:var(--lime);color:var(--lime-ink)}
+.main{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column}
+.center{margin:auto;text-align:center;max-width:400px;padding:24px 0}
+.center .orb-wrap{width:96px;height:96px;margin:0 auto 20px}
+h1{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:-.6px;margin-bottom:8px}
+.lead{color:var(--dim);font-size:15px;margin-bottom:22px}
+.fld{margin-bottom:12px;text-align:start}
+.fld label{font-size:12px;color:var(--faint);display:block;margin-bottom:5px}
+.fld input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:var(--sans);font-size:16px;padding:14px;outline:0}
+.fld input:focus{border-color:var(--line-2)}
+.btn{border:0;cursor:pointer;font-family:var(--sans);font-weight:600;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.btn-p{background:var(--lime);color:var(--lime-ink);padding:15px 26px;font-size:15.5px;width:100%}
+.btn-p:disabled{opacity:.5;cursor:wait}
+.err{color:var(--red);font-size:13px;min-height:18px;margin-top:10px}
+.meta{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.meta span{font-size:12px;color:var(--faint);border:1px solid var(--line);border-radius:8px;padding:5px 11px;background:var(--surface)}
+/* chat */
+.prog{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;text-align:center}
+.feed{display:flex;flex-direction:column;gap:12px;flex:1}
+.m{max-width:88%;padding:12px 15px;border-radius:16px;font-size:14.5px;line-height:1.5;animation:pop .35s ease}
+.m.o{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line);border-bottom-left-radius:6px}
+.m.o .fu{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--violet);background:var(--violet-soft);padding:2px 7px;border-radius:99px;display:inline-block;margin-bottom:6px}
+.m.a{align-self:flex-end;background:var(--lime);color:var(--lime-ink);font-weight:500;border-bottom-right-radius:6px}
+html[dir="rtl"] .m.a{border-bottom-right-radius:16px;border-bottom-left-radius:6px}
+html[dir="rtl"] .m.o{border-bottom-left-radius:16px;border-bottom-right-radius:6px}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.dock{flex:0 0 auto;padding:10px 12px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.din{display:flex;align-items:flex-end;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:5px;padding-inline-start:14px}
+.din textarea{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);font-family:var(--sans);font-size:16px;padding:9px 0;resize:none;max-height:120px}
+.mic,.snd{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.mic{border:1px solid var(--line);background:var(--surface-2);color:var(--dim)}
+.mic.rec{background:var(--red);color:#fff;border-color:var(--red)}
+.snd{border:0;background:var(--lime);color:var(--lime-ink)}
+.mic svg,.snd svg{width:18px;height:18px}
+.dnote{text-align:center;font-size:10.5px;color:var(--faint);margin-top:8px}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--surface-3);border-top-color:var(--lime);animation:rot .8s linear infinite;margin:20px auto}
+@keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="bar">
+    <span class="mk"></span><b id="srv">Whitelist</b>
+    <div class="lng"><button id="lEn" class="on" onclick="setLang('en')">EN</button><button id="lAr" onclick="setLang('ar')">ع</button></div>
+  </div>
+  <div class="main" id="main"><div class="spin"></div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let LANG="en",SLUG=location.pathname.split("/").filter(Boolean).pop()||"",CFG=null,APP=null,STEP=null,busy=false;
+const I18N={
+ en:{loading:"Loading…",notopen:"This application link isn't open right now.",
+  expect:"You'll be interviewed by an AI — a few questions, in your own words. Takes about 5 minutes. Answer honestly and in detail.",
+  start:"Start application",identity:"First, who are you?",
+  q:"Question",of:"of",typeph:"Type your answer…",send:"Send",
+  followup:"Follow-up",submitting:"Reviewing your answers…",
+  doneTitle:"Application submitted",doneBody:"Thanks! The server admins will review your interview and get back to you. You can close this page.",
+  short:"Please write a bit more.",err:"Something went wrong. Please try again.",
+  micNo:"Voice isn't supported in this browser",resume:"Welcome back — continuing where you left off."},
+ ar:{loading:"جارٍ التحميل…",notopen:"رابط التقديم غير مفتوح حاليًا.",
+  expect:"سيُجري ذكاء اصطناعي مقابلة معك — بعض الأسئلة بكلماتك. تستغرق ٥ دقائق تقريبًا. أجب بصدق وتفصيل.",
+  start:"ابدأ التقديم",identity:"أولًا، من أنت؟",
+  q:"سؤال",of:"من",typeph:"اكتب إجابتك…",send:"إرسال",
+  followup:"متابعة",submitting:"نراجع إجاباتك…",
+  doneTitle:"تم إرسال طلبك",doneBody:"شكرًا! سيراجع مشرفو السيرفر مقابلتك ويردّون عليك. يمكنك إغلاق الصفحة.",
+  short:"اكتب أكثر قليلًا.",err:"صار خطأ. حاول مرة ثانية.",
+  micNo:"الصوت غير مدعوم",resume:"أهلًا من جديد — نكمل من حيث توقفت."}};
+const t=k=>I18N[LANG][k];
+function setLang(l){LANG=l;document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";
+ $("lEn").classList.toggle("on",l==="en");$("lAr").classList.toggle("on",l==="ar");
+ if(CFG&&!APP)renderWelcome();} // language is locked once the interview starts
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function boot(){
+ try{
+  const r=await fetch("/api/apply/config?slug="+encodeURIComponent(SLUG));
+  if(!r.ok){$("main").innerHTML=`<div class="center"><h1>${t("notopen")}</h1></div>`;return;}
+  const d=await r.json();CFG=d.config;$("srv").textContent=CFG.serverName;
+  if((CFG.languages||["en"]).length===1)setLang(CFG.languages[0]);
+  renderWelcome();
+ }catch(e){$("main").innerHTML=`<div class="center"><h1>${t("notopen")}</h1></div>`;}
+}
+function renderWelcome(){
+ const fields=CFG.identityFields.map(f=>`<div class="fld"><label>${esc(f.label[LANG]||f.label.en)}</label><input id="id_${f.key}" autocomplete="off"></div>`).join("");
+ $("main").innerHTML=`<div class="center">
+  <div class="orb-wrap"><div class="orb"></div></div>
+  <h1>${esc(CFG.serverName)}</h1>
+  <div class="meta"><span>🕐 ~5 min</span><span>🗣️ ${CFG.languages.map(l=>l==="ar"?"عربي":"English").join(" · ")}</span><span>🤖 AI interview</span></div>
+  <p class="lead">${t("expect")}</p>
+  <div style="text-align:start;margin-bottom:16px"><div class="prog" style="text-align:start;margin-bottom:10px">${t("identity")}</div>${fields}</div>
+  <button class="btn btn-p" id="startBtn" onclick="startApp()">${t("start")}</button>
+  <div class="err" id="err"></div></div>`;
+}
+async function startApp(){
+ if(busy)return;const identity={};
+ for(const f of CFG.identityFields){const v=$("id_"+f.key).value.trim();if(f.required&&!v){$("err").textContent=(f.label[LANG]||f.label.en)+" ✗";return;}identity[f.key]=v;}
+ busy=true;$("startBtn").disabled=true;$("err").textContent="";
+ try{
+  const r=await fetch("/api/apply/start",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({slug:SLUG,language:LANG,identity})});
+  const d=await r.json();
+  if(!r.ok){$("err").textContent=t(r.status===429?"err":"err");busy=false;$("startBtn").disabled=false;return;}
+  APP={appId:d.appId,resumeToken:d.resumeToken};
+  try{localStorage.setItem("m2apply."+SLUG,JSON.stringify(APP));}catch(e){}
+  STEP=d.step;renderChat();
+ }catch(e){$("err").textContent=t("err");busy=false;$("startBtn").disabled=false;}
+}
+let FEED=[];
+function renderChat(){
+ document.documentElement.dir=LANG==="ar"?"rtl":"ltr";
+ $("main").innerHTML=`<div class="prog" id="prog"></div><div class="feed" id="feed"></div>`;
+ // rebuild feed from memory
+ const shell=document.querySelector(".shell");
+ if(!document.getElementById("dock")){const d=document.createElement("div");d.className="dock";d.id="dock";
+  d.innerHTML=`<div class="din"><textarea id="ans" rows="1" placeholder="${t("typeph")}"></textarea>
+   <div class="mic" id="mic" onclick="toggleMic()"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M6 11a6 6 0 0012 0M12 17v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+   <button class="snd" id="snd" onclick="sendAns()"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button></div>
+   <div class="dnote">${t("typeph")}</div>`;
+  shell.appendChild(d);
+  $("ans").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(120,e.target.scrollHeight)+"px";});
+  $("ans").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendAns();}});
+ }
+ for(const m of FEED)addBubble(m.role,m.text,m.followup,false);
+ showStep();busy=false;
+}
+function addBubble(role,text,followup,store=true){
+ if(store)FEED.push({role,text,followup});
+ const f=$("feed");const el=document.createElement("div");
+ el.className="m "+(role==="officer"?"o":"a");
+ el.innerHTML=(role==="officer"&&followup?`<span class="fu">${t("followup")}</span>`:"")+esc(text);
+ f.appendChild(el);$("main").scrollTop=$("main").scrollHeight;
+}
+function showStep(){
+ if(!STEP)return;
+ if(STEP.kind==="done"){return submitApp();}
+ $("prog").textContent=`${t("q")} ${STEP.progress.index} ${t("of")} ${STEP.progress.total}`;
+ // avoid duplicating the same officer prompt on resume re-render
+ const last=FEED[FEED.length-1];
+ if(!(last&&last.role==="officer"&&last.text===STEP.prompt))addBubble("officer",STEP.prompt,STEP.kind==="followup");
+}
+async function sendAns(){
+ if(busy||!STEP||STEP.kind==="done")return;
+ const ta=$("ans");const text=ta.value.trim();if(text.length<2){return;}
+ busy=true;addBubble("applicant",text);ta.value="";ta.style.height="auto";
+ try{
+  const r=await fetch("/api/apply/answer",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({appId:APP.appId,resumeToken:APP.resumeToken,text})});
+  const d=await r.json();
+  if(!r.ok){busy=false;addBubble("officer",t("err"));return;}
+  STEP=d.step;busy=false;showStep();
+ }catch(e){busy=false;addBubble("officer",t("err"));}
+}
+async function submitApp(){
+ if($("dock"))$("dock").remove();
+ $("main").innerHTML=`<div class="center"><div class="spin"></div><p class="lead">${t("submitting")}</p></div>`;
+ try{
+  const r=await fetch("/api/apply/submit",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({appId:APP.appId,resumeToken:APP.resumeToken})});
+  await r.json();
+ }catch(e){}
+ try{localStorage.removeItem("m2apply."+SLUG);}catch(e){}
+ $("main").innerHTML=`<div class="center"><div class="orb-wrap" style="width:84px;height:84px;margin:0 auto 18px"><div class="orb"></div></div><h1>${t("doneTitle")}</h1><p class="lead">${t("doneBody")}</p></div>`;
+}
+/* voice - same Web Speech approach as the console */
+let rec=null,recing=false;
+function toggleMic(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){$("mic").style.opacity=".4";return;}
+ if(recing){rec&&rec.stop();return;}
+ rec=new SR();rec.lang=LANG==="ar"?"ar-AE":"en-US";rec.interimResults=true;rec.continuous=false;
+ rec.onresult=e=>{let s="";for(let i=e.resultIndex;i<e.results.length;i++)s+=e.results[i][0].transcript;
+  const ta=$("ans");ta.value=s;ta.style.height="auto";ta.style.height=Math.min(120,ta.scrollHeight)+"px";};
+ rec.onend=()=>{recing=false;$("mic").classList.remove("rec");};
+ rec.onerror=()=>{recing=false;$("mic").classList.remove("rec");};
+ recing=true;$("mic").classList.add("rec");try{rec.start();}catch(e){}
+}
+/* resume a dropped session */
+async function tryResume(){
+ let saved;try{saved=JSON.parse(localStorage.getItem("m2apply."+SLUG));}catch(e){}
+ if(!saved||!saved.appId)return false;
+ try{
+  const r=await fetch(`/api/apply/resume?appId=${encodeURIComponent(saved.appId)}&resumeToken=${encodeURIComponent(saved.resumeToken)}`);
+  if(!r.ok)return false;const d=await r.json();
+  if(d.status!=="in_progress")return false;
+  APP=saved;STEP=d.step;renderChat();return true;
+ }catch(e){return false;}
+}
+(async function(){await boot();if(CFG&&CFG.enabled)await tryResume();})();
+</script>
+</body>
+</html>

@@ -27,6 +27,11 @@ const API_ROUTES = {
   '/api/scan': './api/scan',
   '/api/scan-status': './api/scan-status',
   '/api/whitelist/config': './api/whitelist/config',
+  '/api/apply/config': './api/apply/config',
+  '/api/apply/start': './api/apply/start',
+  '/api/apply/answer': './api/apply/answer',
+  '/api/apply/submit': './api/apply/submit',
+  '/api/apply/resume': './api/apply/resume',
 };
 
 const MIME = {
@@ -100,6 +105,8 @@ function serveStatic(res, pathname) {
     staticHeaders(res, false);
     return res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
   }
+  // /apply/{slug} -> the public applicant page (slug read client-side)
+  if (pathname === '/apply' || pathname.startsWith('/apply/')) pathname = '/apply.html';
   const rewrites = { '/': '/index.html', '/dashboard': '/dashboard.html' };
   const file = contained(APP_DIR, rewrites[pathname] || pathname);
   if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) {

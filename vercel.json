@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/", "destination": "/app/index.html" },
     { "source": "/dashboard", "destination": "/app/dashboard.html" },
+    { "source": "/apply/:slug", "destination": "/app/apply.html" },
     { "source": "/firebase-config.js", "destination": "/app/firebase-config.js" },
     { "source": "/fx.js", "destination": "/app/fx.js" }
   ],
