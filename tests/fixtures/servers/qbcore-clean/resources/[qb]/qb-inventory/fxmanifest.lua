@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'qb-inventory'
+author 'fixture'
+version '1.0.0'
+dependency 'qb-core'

@@ -1,0 +1,5 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'mx-nested'
+author 'fixture'
+version '1.0.0'

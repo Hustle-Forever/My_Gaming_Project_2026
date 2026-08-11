@@ -1,0 +1,7 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'sketchy'
+author 'fixture'
+version '1.0.0'
+dependency 'ox_target'
+server_script 'server/steal.lua'

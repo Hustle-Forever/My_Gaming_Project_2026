@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'oxmysql'
+author 'fixture'
+version '1.0.0'
+server_script 'lib/MySQL.lua'

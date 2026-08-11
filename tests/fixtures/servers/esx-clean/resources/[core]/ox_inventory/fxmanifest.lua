@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'ox_inventory'
+author 'fixture'
+version '1.0.0'
+shared_script 'data/items.lua'

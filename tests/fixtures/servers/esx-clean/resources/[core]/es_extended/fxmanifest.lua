@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'es_extended'
+author 'ESX Framework'
+version '1.10.2'
+shared_script 'config.lua'

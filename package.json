@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.16.0",
+    "adm-zip": "^0.5.18",
     "dotenv": "^16.4.5",
     "firebase-admin": "^13.0.0"
   },

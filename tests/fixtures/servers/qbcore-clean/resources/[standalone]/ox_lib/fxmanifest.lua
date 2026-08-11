@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+name 'ox_lib'
+author 'fixture'
+version '1.0.0'
+shared_script 'init.lua'
