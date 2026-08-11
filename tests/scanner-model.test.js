@@ -37,9 +37,9 @@ test('parseServerCfg: ensure order, exec recursion, convars', () => {
   const a = open('qbcore-clean');
   const cfg = parseServerCfg(a);
   const names = cfg.ensures.map((e) => e.name);
-  // extras.cfg is exec'd BEFORE the ensures in server.cfg, so qb-garages loads first
-  assert.deepEqual(names, ['qb-garages', 'oxmysql', 'ox_lib', 'qb-core', 'qb-inventory', 'qb-policejob']);
-  assert.equal(cfg.ensures[0].file, 'extras.cfg');
+  // extras.cfg is exec'd at the END, so qb-garages loads last (after qb-core it depends on)
+  assert.deepEqual(names, ['oxmysql', 'ox_lib', 'qb-core', 'qb-inventory', 'qb-policejob', 'qb-garages']);
+  assert.equal(cfg.ensures[5].file, 'extras.cfg', 'exec recursion pulled qb-garages from extras.cfg');
   assert.ok(cfg.ensures.every((e, i) => e.orderIndex === i));
   assert.ok(cfg.convars.mysql_connection_string, 'convars captured');
   assert.equal(cfg.convars.sv_hostname.value, 'Clean QBCore RP');
