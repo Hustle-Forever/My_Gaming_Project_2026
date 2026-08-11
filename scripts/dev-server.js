@@ -24,6 +24,8 @@ const API_ROUTES = {
   '/api/tenant/key': './api/tenant/key',
   '/api/tenant/rotate-bridge-token': './api/tenant/rotate-bridge-token',
   '/api/stripe/webhook': './api/stripe/webhook',
+  '/api/scan': './api/scan',
+  '/api/scan-status': './api/scan-status',
 };
 
 const MIME = {

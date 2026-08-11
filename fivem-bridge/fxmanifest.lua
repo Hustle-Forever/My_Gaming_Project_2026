@@ -9,6 +9,7 @@ version '0.1.0'
 server_scripts {
     'config.lua',
     'server.lua',
+    'scan.lua',
 }
 
 client_scripts {
