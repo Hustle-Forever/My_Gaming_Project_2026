@@ -22,6 +22,7 @@
     "firebase-admin": "^13.0.0"
   },
   "devDependencies": {
-    "firebase-tools": "^14.0.0"
+    "firebase-tools": "^14.0.0",
+    "jsdom": "^25.0.1"
   }
 }

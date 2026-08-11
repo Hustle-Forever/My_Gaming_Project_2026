@@ -139,6 +139,55 @@ pre.cfg{background:var(--bg);border:1px solid var(--line);border-radius:12px;pad
 .confirm{background:var(--red-soft);border:1px solid var(--red);border-radius:12px;padding:12px;margin-top:10px;font-size:12.5px;line-height:1.5}
 .confirm .cbtns{display:flex;gap:8px;margin-top:10px}
 
+/* server report */
+.rp-ro{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--lime);background:var(--lime-soft);border-radius:10px;padding:9px 11px;margin-top:4px}
+.rp-ro svg{width:15px;height:15px;flex:0 0 auto}
+.rp-score{display:flex;align-items:center;gap:16px;margin-top:6px}
+.rp-gauge{width:74px;height:74px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:24px;
+ background:conic-gradient(var(--gc,var(--lime)) calc(var(--gp,0)*1%),var(--surface-3) 0);position:relative}
+.rp-gauge::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--surface)}
+.rp-gauge span{position:relative;z-index:1}
+.rp-verdict{display:flex;flex-direction:column;gap:5px}
+.rp-verdict b{font-size:14.5px;font-weight:600;line-height:1.4}
+.rp-counts{display:flex;gap:6px;flex-wrap:wrap}
+.rp-chip{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px}
+.rp-chip.critical{background:rgba(240,119,111,.16);color:var(--red)}
+.rp-chip.high{background:rgba(242,193,78,.16);color:var(--amber)}
+.rp-chip.medium{background:var(--violet-soft);color:var(--violet)}
+.rp-chip.low,.rp-chip.info{background:var(--surface-3);color:var(--dim)}
+.rp-id{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.rp-id .kv{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.rp-id .kv .k{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+.rp-id .kv .v{font-size:14px;font-weight:600;margin-top:2px}
+.rp-id .kv .cf{font-size:10px;color:var(--faint);margin-top:1px}
+.rp-filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.rp-filters button{border:1px solid var(--line);background:var(--surface);color:var(--dim);border-radius:99px;font-family:var(--sans);font-size:11.5px;font-weight:600;padding:6px 11px;cursor:pointer}
+.rp-filters button.on{background:var(--surface-3);color:var(--text);border-color:var(--line-2)}
+.rp-findings{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.rp-f{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.rp-f>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 13px}
+.rp-f>summary::-webkit-details-marker{display:none}
+.rp-f .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.rp-f .dot.critical{background:var(--red)}.rp-f .dot.high{background:var(--amber)}.rp-f .dot.medium{background:var(--violet)}.rp-f .dot.low,.rp-f .dot.info{background:var(--faint)}
+.rp-f .ft{font-size:13px;font-weight:600;flex:1;min-width:0}
+.rp-f .sv{font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--faint)}
+.rp-f .body{padding:0 13px 13px 32px;font-size:12.5px;color:var(--dim);line-height:1.6}
+.rp-f .body .lbl{color:var(--faint);text-transform:uppercase;font-size:9.5px;letter-spacing:.5px;margin-top:8px;display:block}
+.rp-f .body code{font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px;direction:ltr;display:inline-block}
+.rp-restable{margin-top:14px;font-size:12.5px}
+.rp-restable summary{cursor:pointer;color:var(--dim);font-weight:600;padding:8px 0}
+.rp-restable table{width:100%;border-collapse:collapse;font-size:11.5px}
+.rp-restable td,.rp-restable th{text-align:start;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--dim)}
+.rp-restable th{color:var(--faint);font-weight:600;font-size:10px;text-transform:uppercase}
+.rp-restable .off{color:var(--faint)}
+.rp-restable .badd{color:var(--red)}
+.rp-history{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.rp-hrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px}
+.rp-hrow:last-child{border-bottom:0}
+.rp-hrow .hs{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-weight:700;font-size:11px;flex:0 0 auto;font-family:var(--display)}
+.rp-hlabel{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right}
+
 /* plan */
 .plist{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .plist li{display:flex;gap:8px;font-size:13px;color:var(--dim);align-items:flex-start}
@@ -298,6 +347,52 @@ pre.cfg{background:var(--bg);border:1px solid var(--line);border-radius:12px;pad
       </ol>
     </div>
 
+    <!-- 3.5 · server report (scanner) -->
+    <div class="card" id="report">
+      <h2><span class="ci l"><svg viewBox="0 0 24 24" fill="none"><path d="M11 4a7 7 0 105.2 11.7L21 20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i="rpTitle">Server report</span></h2>
+      <p class="sub" data-i="rpSub">A read-only scan of your server: what it runs, what's broken, and what to fix. Nothing is ever changed — M2 only reads.</p>
+
+      <!-- empty / start -->
+      <div id="rpStart">
+        <div class="rp-ro"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg><span data-i="rpReadOnly">100% read-only — it cannot write, move, or delete anything.</span></div>
+        <input id="rpFolder" type="file" webkitdirectory directory multiple style="display:none" onchange="rpPicked(event)">
+        <div class="inrow" style="margin-top:14px">
+          <button class="btn btn-p" style="flex:1;padding:13px" onclick="document.getElementById('rpFolder').click()" data-i="rpPick">Choose your server folder</button>
+        </div>
+        <div class="constat" id="rpBridgeHint" style="margin-top:12px"><span class="d"></span><span data-i="rpBridgeSoon">Server connected? Bridge scanning arrives next — folder scan works for everyone today.</span></div>
+        <div class="okline err" id="rpErr"></div>
+      </div>
+
+      <!-- progress -->
+      <div id="rpProgress" class="hide" style="text-align:center;padding:16px 0">
+        <div class="orb-wrap" style="width:56px;height:56px;margin:0 auto 12px"><div class="orb"></div></div>
+        <div style="font-size:13.5px;color:var(--dim)" id="rpProgTxt" data-i="rpScanning">Reading your server…</div>
+      </div>
+
+      <!-- result -->
+      <div id="rpResult" class="hide">
+        <div class="rp-score">
+          <div class="rp-gauge" id="rpGauge"><span id="rpScore">–</span></div>
+          <div class="rp-verdict"><b id="rpVerdict">—</b><span id="rpCounts" class="rp-counts"></span></div>
+        </div>
+
+        <div class="rp-id" id="rpIdentity"></div>
+
+        <div class="rp-filters" id="rpFilters"></div>
+        <div class="rp-findings" id="rpFindings"></div>
+
+        <details class="rp-restable"><summary data-i="rpResources">Resources</summary><div id="rpResList"></div></details>
+
+        <div class="inrow" style="margin-top:14px">
+          <button class="btn btn-g" style="flex:1" onclick="rpExport()" data-i="rpExport">Export report</button>
+          <button class="btn btn-g" onclick="rpReset()" data-i="rpNew">New scan</button>
+        </div>
+      </div>
+
+      <!-- history -->
+      <div id="rpHistory" class="rp-history hide"></div>
+    </div>
+
     <!-- 4 · plan -->
     <div class="card" id="plan">
       <h2><span class="ci p"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span data-i="plTitle">Plan</span></h2>
@@ -403,7 +498,17 @@ const I18N={
   vNotYet:"Not verified yet — click the link in the email first, then try again.",
   vSentAgain:"Sent ✓ — check your inbox (and spam folder).",
   forgot:"Forgot password?",resetSent:"If that email has an account, a reset link is on its way.",
-  enterEmailFirst:"Type your email above first."},
+  enterEmailFirst:"Type your email above first.",
+  rpTitle:"Server report",rpSub:"A read-only scan of your server: what it runs, what's broken, and what to fix. Nothing is ever changed — M2 only reads.",
+  rpReadOnly:"100% read-only — it cannot write, move, or delete anything.",
+  rpPick:"Choose your server folder",rpBridgeSoon:"Server connected? Bridge scanning arrives next — folder scan works for everyone today.",
+  rpScanning:"Reading your server…",rpBuilding:"Packing files…",rpAnalyzing:"Analyzing…",
+  rpResources:"Resources",rpExport:"Export report",rpNew:"New scan",
+  rpFramework:"Framework",rpInventory:"Inventory",rpJobs:"Jobs",rpItems:"Items",rpDeps:"Dependencies",
+  rpConf:"confidence",rpAll:"All",rpNothing:"No files found in that folder — pick your server's resources folder.",
+  rpTooBig:"That folder is too large to scan in one go.",rpFailed:"Scan failed — try again.",
+  rpClean:"No problems found. Nice and tidy.",rpWhy:"Why it matters",rpFix:"How to fix",rpEvidence:"Where",
+  rpHistoryLbl:"Past scans",rpStarted:"started",rpStopped:"stopped"},
  ar:{dashTitle:"لوحة التحكم",active:"مفعّل",inactive:"موقوف",
   authTitleUp:"أنشئ حسابك",authSubUp:"ابدأ مجانًا. بدون بطاقة.",
   authTitleIn:"أهلًا من جديد",authSubIn:"سجّل الدخول لإدارة سيرفرك.",
@@ -440,7 +545,17 @@ const I18N={
   vNotYet:"لم يتفعّل بعد — اضغط الرابط في البريد أولًا ثم حاول.",
   vSentAgain:"أُرسل ✓ — تحقق من بريدك (ومجلد المزعج).",
   forgot:"نسيت كلمة المرور؟",resetSent:"إذا كان البريد مسجّلًا، وصلك رابط الاستعادة.",
-  enterEmailFirst:"اكتب بريدك فوق أولًا."}};
+  enterEmailFirst:"اكتب بريدك فوق أولًا.",
+  rpTitle:"تقرير السيرفر",rpSub:"فحص للقراءة فقط لسيرفرك: ماذا يشغّل، وما المعطوب، وكيف تُصلحه. لا يتغيّر شيء — M2 يقرأ فقط.",
+  rpReadOnly:"قراءة فقط 100% — لا يكتب ولا يحرّك ولا يحذف شيئًا.",
+  rpPick:"اختر مجلد سيرفرك",rpBridgeSoon:"سيرفرك متصل؟ فحص عبر الجسر قادم قريبًا — فحص المجلد متاح للجميع اليوم.",
+  rpScanning:"نقرأ سيرفرك…",rpBuilding:"نجهّز الملفات…",rpAnalyzing:"نحلّل…",
+  rpResources:"الموارد",rpExport:"تصدير التقرير",rpNew:"فحص جديد",
+  rpFramework:"الإطار",rpInventory:"الحقيبة",rpJobs:"الوظائف",rpItems:"العناصر",rpDeps:"الاعتماديات",
+  rpConf:"ثقة",rpAll:"الكل",rpNothing:"لا ملفات في هذا المجلد — اختر مجلد سيرفرك الخاص بسيرفرك.",
+  rpTooBig:"هذا المجلد أكبر من أن يُفحص دفعة واحدة.",rpFailed:"فشل الفحص — حاول مرة ثانية.",
+  rpClean:"لا مشاكل. كل شيء مرتّب.",rpWhy:"لماذا يهم",rpFix:"كيف تُصلح",rpEvidence:"الموضع",
+  rpHistoryLbl:"فحوصات سابقة",rpStarted:"مُشغَّل",rpStopped:"متوقف"}};
 
 const $=i=>document.getElementById(i), t=k=>I18N[LANG][k];
 const SUN='<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -453,7 +568,7 @@ function setLang(l){LANG=l;localStorage.setItem("m2.lang",l);
  $("lEn").classList.toggle("on",l==="en");$("lAr").classList.toggle("on",l==="ar");
  document.querySelectorAll("[data-i]").forEach(e=>{const v=t(e.dataset.i);if(v!==undefined)e.textContent=v;});
  document.querySelectorAll("[data-ip]").forEach(e=>{const v=t(e.dataset.ip);if(v)e.placeholder=v;});
- setAuthTab(AUTHTAB);render();}
+ setAuthTab(AUTHTAB);render();if(RP_LAST)rpRender(RP_LAST);}
 
 /* ---- auth ---- */
 function setAuthTab(tab){AUTHTAB=tab;
@@ -557,7 +672,7 @@ async function enter(){
   if(!ok)return;
   $("netbar").classList.remove("show");
   $("auth").classList.remove("show");$("boot").classList.add("hide");
-  $("dash").classList.remove("hide");render();startRefresh();
+  $("dash").classList.remove("hide");render();startRefresh();rpLoadHistory();
  }catch(e){
   $("boot").classList.add("hide");
   $("auth").classList.remove("show");$("dash").classList.remove("hide");
@@ -665,6 +780,124 @@ async function doRotate(){
 }
 function goCard(id){const el=$(id);el.scrollIntoView({behavior:"smooth",block:"start"});
  el.style.transition="box-shadow .3s";el.style.boxShadow="0 0 0 2px var(--lime)";setTimeout(()=>{el.style.boxShadow="";},1200);}
+
+/* ===== Server Report (read-only scanner) ===== */
+const RP_TEXT=/\.(lua|cfg|json|sql|txt|md)$/i;
+const RP_CAP_FILE=1024*1024, RP_CAP_TOTAL=24*1024*1024, RP_CAP_ENTRIES=8000;
+let RP_LAST=null, RP_FILTER="all";
+
+function rpShow(view){for(const v of ["rpStart","rpProgress","rpResult"])$(v).classList.toggle("hide",v!==view);}
+function rpReset(){RP_LAST=null;$("rpErr").textContent="";$("rpFolder").value="";rpShow("rpStart");}
+
+async function rpPicked(ev){
+ const files=[...ev.target.files||[]];
+ if(!files.length)return;
+ $("rpErr").textContent="";rpShow("rpProgress");$("rpProgTxt").textContent=t("rpBuilding");
+ try{
+  // strip the picked folder's own name so paths are server-root-relative
+  const rel=(f)=>{const p=(f.webkitRelativePath||f.name).replace(/\\/g,"/");const i=p.indexOf("/");return i>=0?p.slice(i+1):p;};
+  if(files.length>RP_CAP_ENTRIES){$("rpErr").textContent=t("rpTooBig");return rpShow("rpStart");}
+  const pack={files:[]};let total=0;
+  for(const f of files){
+   const path=rel(f);if(!path)continue;
+   const isText=RP_TEXT.test(path);
+   let content;
+   if(isText&&f.size<=RP_CAP_FILE){
+    total+=f.size;if(total>RP_CAP_TOTAL){$("rpErr").textContent=t("rpTooBig");return rpShow("rpStart");}
+    content=await f.text();
+   }
+   pack.files.push({path,size:f.size,content});
+  }
+  if(!pack.files.some(f=>/(^|\/)server\.cfg$/i.test(f.path))&&!pack.files.some(f=>/(^|\/)fxmanifest\.lua$/i.test(f.path))){
+   $("rpErr").textContent=t("rpNothing");return rpShow("rpStart");
+  }
+  $("rpProgTxt").textContent=t("rpAnalyzing");
+  const r=await authedFetch("/api/scan",{method:"POST",body:JSON.stringify({source:"upload",pack})});
+  if(r.status===401)return sessionExpired();
+  if(r.status===403)return showVerify();
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){$("rpErr").textContent=(d.error&&d.error.code==="RATE_LIMITED")?t("rpFailed"):t("rpFailed");return rpShow("rpStart");}
+  const full=await authedFetch("/api/scan-status?scanId="+encodeURIComponent(d.scanId));
+  const fd=await full.json().catch(()=>({}));
+  if(!full.ok||!fd.scan){$("rpErr").textContent=t("rpFailed");return rpShow("rpStart");}
+  RP_LAST=fd.scan;RP_FILTER="all";rpRender(fd.scan);rpLoadHistory();
+ }catch(e){$("rpErr").textContent=t("rpFailed");rpShow("rpStart");}
+}
+
+function rpScoreColor(s){return s>=85?"var(--lime)":s>=60?"var(--amber)":"var(--red)";}
+function rpRender(scan){
+ RP_LAST=scan;                 // source of truth for re-render (lang switch, filters)
+ rpShow("rpResult");
+ const h=scan.health;
+ const g=$("rpGauge");g.style.setProperty("--gp",h.score);g.style.setProperty("--gc",rpScoreColor(h.score));
+ $("rpScore").textContent=h.score;
+ $("rpVerdict").textContent=h.verdict[LANG]||h.verdict.en;
+ const order=["critical","high","medium","low","info"];
+ $("rpCounts").innerHTML=order.filter(s=>h.counts[s]).map(s=>`<span class="rp-chip ${s}">${h.counts[s]} ${s}</span>`).join("")||`<span class="rp-chip low">${t("rpClean")}</span>`;
+
+ const id=scan.identity;const conf=(c)=>`<div class="cf">${Math.round((c||0)*100)}% ${t("rpConf")}</div>`;
+ $("rpIdentity").innerHTML=[
+  ["rpFramework",(id.framework.framework||"?")+(id.framework.version?" "+id.framework.version:""),conf(id.framework.confidence)],
+  ["rpInventory",id.inventory.inventory||"?",conf(id.inventory.confidence)],
+  ["rpJobs",String(id.jobs.jobs?id.jobs.jobs.length:0),""],
+  ["rpItems",String(id.items.count||0),""],
+ ].map(([k,v,c])=>`<div class="kv"><div class="k">${t(k)}</div><div class="v">${esc(v)}</div>${c}</div>`).join("");
+
+ // filters
+ const sevs=order.filter(s=>scan.findings.some(f=>f.severity===s));
+ $("rpFilters").innerHTML=[`<button class="${RP_FILTER==="all"?"on":""}" onclick="rpSetFilter('all')">${t("rpAll")} (${scan.findings.length})</button>`]
+  .concat(sevs.map(s=>`<button class="${RP_FILTER===s?"on":""}" onclick="rpSetFilter('${s}')">${s} (${h.counts[s]})</button>`)).join("");
+
+ const list=scan.findings.filter(f=>RP_FILTER==="all"||f.severity===RP_FILTER);
+ $("rpFindings").innerHTML=list.length?list.map(f=>{
+  const ev=(f.evidence||[]).map(e=>`<div><code>${esc([e.resource,e.file,e.line?("L"+e.line):null].filter(Boolean).join(" · "))}</code> ${esc(e.detail||"")}</div>`).join("");
+  return `<details class="rp-f"><summary><span class="dot ${f.severity}"></span><span class="ft">${esc(tr(f.title))}</span><span class="sv">${f.severity}</span></summary>
+   <div class="body">${esc(tr(f.why))}<span class="lbl">${t("rpFix")}</span>${esc(tr(f.fix))}<span class="lbl">${t("rpEvidence")}</span>${ev}</div></details>`;
+ }).join(""):`<div class="okline">${t("rpClean")}</div>`;
+
+ // resource table
+ const res=Object.values(scan.model.resources||{}).sort((a,b)=>a.name.localeCompare(b.name));
+ $("rpResList").innerHTML=`<table><thead><tr><th>${t("rpResources")}</th><th></th><th>KB</th><th>${t("rpDeps")}</th></tr></thead><tbody>`+
+  res.map(r=>`<tr><td>${esc(r.name)}</td><td class="${r.started?"":"off"}">${r.started?t("rpStarted"):t("rpStopped")}</td><td>${Math.round((r.sizeBytes||0)/1024)}</td><td>${esc((r.dependencies||[]).join(", "))}</td></tr>`).join("")+
+  `</tbody></table>`;
+}
+function rpSetFilter(s){RP_FILTER=s;if(RP_LAST)rpRender(RP_LAST);}
+function tr(o){return o?(o[LANG]||o.en||""):"";}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+async function rpLoadHistory(){
+ try{
+  const r=await authedFetch("/api/scan-status");
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.scans||!d.scans.length){$("rpHistory").classList.add("hide");return;}
+  $("rpHistory").classList.remove("hide");
+  $("rpHistory").innerHTML=`<div class="rp-hlabel">${t("rpHistoryLbl")}</div>`+d.scans.map(s=>{
+   const col=s.health.score>=85?"var(--lime-soft)":s.health.score>=60?"rgba(242,193,78,.16)":"rgba(240,119,111,.16)";
+   const tc=s.health.score>=85?"var(--lime)":s.health.score>=60?"var(--amber)":"var(--red)";
+   const when=new Date(s.createdAtMs).toLocaleDateString(LANG==="ar"?"ar":"en",{month:"short",day:"numeric"});
+   return `<div class="rp-hrow" onclick="rpOpen('${s.scanId}')"><span class="hs" style="background:${col};color:${tc}">${s.health.score}</span><span style="flex:1">${esc(s.framework)} · ${when}</span><span class="sv" style="font-size:9.5px;color:var(--faint)">${s.source}</span></div>`;
+  }).join("");
+ }catch(e){$("rpHistory").classList.add("hide");}
+}
+async function rpOpen(scanId){
+ rpShow("rpProgress");
+ const r=await authedFetch("/api/scan-status?scanId="+encodeURIComponent(scanId));
+ const d=await r.json().catch(()=>({}));
+ if(r.ok&&d.scan){RP_LAST=d.scan;RP_FILTER="all";rpRender(d.scan);}else rpShow("rpStart");
+}
+function rpExport(){
+ if(!RP_LAST)return;
+ const s=RP_LAST,L=LANG;const lines=[];
+ lines.push("M2 SERVER REPORT");
+ lines.push("Health: "+s.health.score+"/100 — "+tr(s.health.verdict));
+ lines.push("Framework: "+(s.identity.framework.framework||"?")+(s.identity.framework.version?" "+s.identity.framework.version:""));
+ lines.push("Inventory: "+(s.identity.inventory.inventory||"?"));
+ lines.push("");lines.push("FINDINGS ("+s.findings.length+"):");
+ s.findings.forEach(f=>{lines.push("["+f.severity.toUpperCase()+"] "+tr(f.title));lines.push("  "+tr(f.why));lines.push("  Fix: "+tr(f.fix));});
+ const blob=new Blob([lines.join("\n")],{type:"text/plain"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="m2-server-report.txt";a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
 
 /* ---- boot ---- */
 document.addEventListener("mirsal-auth-ready",async(e)=>{
