@@ -26,6 +26,7 @@ const API_ROUTES = {
   '/api/stripe/webhook': './api/stripe/webhook',
   '/api/scan': './api/scan',
   '/api/scan-status': './api/scan-status',
+  '/api/whitelist/config': './api/whitelist/config',
 };
 
 const MIME = {
