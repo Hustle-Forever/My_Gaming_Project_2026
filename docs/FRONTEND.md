@@ -29,9 +29,13 @@
 - Theme + language persist in `localStorage` (`m2.theme`, `m2.lang`) across both pages.
 - **Pay-gate is open:** new accounts are `active:true` on signup (no payment); the 402 UI states exist and are E2E-verified for when Stripe re-gates. See [SECURITY.md](SECURITY.md) / [GOAL.md](GOAL.md).
 
-## Voice
+## Voice (in + out)
 
-Web Speech API (`SpeechRecognition`), `ar-AE` when the UI language is Arabic, `en-US` otherwise. Transcript fills the box and auto-sends. Needs Chrome/Edge/Safari and HTTPS (or localhost); the mic control degrades gracefully elsewhere.
+**In** — Web Speech API (`SpeechRecognition`), `ar-AE` when the UI language is Arabic, `en-US` otherwise. Transcript fills the box and auto-sends. Needs Chrome/Edge/Safari and HTTPS (or localhost); the mic control degrades gracefully elsewhere.
+
+**Out (TTS)** — `app/speech.js` exposes a tiny engine `window.M2Speech` built on the browser's `speechSynthesis` (no API cost, offline, no dependency). It is deliberately behind an interface so a **premium voice provider could be swapped in later without touching the console**. It auto-speaks only when the reply came from a *voice* input (typed input never auto-speaks), picks a voice matching the **reply** language (ar-*/en-*, degrading silently if none is installed, handling async `voiceschanged`), strips markdown + caps utterance length, and never overlaps — every `speak()` cancels the one in progress. A **Settings** toggle governs it: *Voice replies — off / when I speak / on* (default: when I speak), persisted in `localStorage` (`m2.voice`). Each assistant message also carries a small speaker button for on-demand playback.
+
+**Continuous conversation** — when an exchange starts by voice, the console runs it hands-free: **listen → think → speak → listen**, automatically, until the user stops it. Safety caps keep the mic from ever staying open: a turn cap, a silent turn, any recognition/network error, or the visible **Stop** each end the loop; a *typed* message never starts it. The speaking state shows as a gently-pulsing orb pill with Stop (distinct from the listening overlay). Speech is cancelled on a new message, a new recording, a mode switch, or navigation away.
 
 ## Leftovers
 

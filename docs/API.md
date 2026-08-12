@@ -56,11 +56,11 @@ Liveness + dependency detail. Never contains secrets.
 **Email verification (all ID-token endpoints):** `requireVerifiedUser` rejects any token whose `email_verified` claim is false with 403 `EMAIL_UNVERIFIED` — server-enforced, so no client can skip it. The client sends the verification email via the Firebase web SDK (`sendEmailVerification`), then refreshes the token after the link is clicked (`getIdToken(true)`); password resets use `sendPasswordResetEmail` with deliberately neutral UI copy (no account enumeration).
 
 ### `POST /api/command` — ID token
-`{ text, mode? }` — `text` 1–300 chars; `mode` `"run"` (default) or `"ask"`.
-Pipeline: verify token → tenant → pay-gate → **rate limit** (`RATE_LIMIT_PER_MIN`, default 30/min/tenant, Firestore-backed) → decrypt tenant key (never logged) → interpret → `actions.validateAction` (the whitelist gate — anything else becomes `none`) → queue.
-- Run, matched: `{ ok:true, action, params, queued:true, message }` (message is the friendly Arabic template)
-- Run, unmatched: `{ ok:true, action:"none", queued:false, message }`
-- Ask: `{ ok:true, reply }` — never an action, never queued
+`{ text, mode? }` — `text` 1–300 chars; `mode` `"run"` (default) or `"ask"`. The client sends **no language** — the reply language is decided server-side from the message text (`lib/lang.js`), so the UI toggle can never change it. Mixed/ambiguous input falls back to `tenant.defaultLanguage` (or `en`).
+Pipeline: verify token → tenant → pay-gate → **rate limit** (`RATE_LIMIT_PER_MIN`, default 30/min/tenant, Firestore-backed) → detect reply language → decrypt tenant key (never logged) → interpret (Run) / answer (Ask) → `actions.validateAction` (the whitelist gate — anything else becomes `none`) → queue.
+- Run, matched: `{ ok:true, action, params, queued:true, message, lang }` — `message` is the friendly confirmation in the detected language (`lang` is `"en"`/`"ar"`)
+- Run, unmatched: `{ ok:true, action:"none", queued:false, message, lang }`
+- Ask: `{ ok:true, reply, lang }` — never an action, never queued. The assistant is a product-aware persona (`lib/ask-persona.js`) that explains and is concrete about the tenant's own server (latest scan model + `allowedActions`); with no AI key a deterministic, genuinely-helpful fallback answers in the same language.
 - First successful queue stamps `firstCommandAt` on the tenant.
 - 401 · 402 · 400 · 413 · 429 per the envelope table.
 

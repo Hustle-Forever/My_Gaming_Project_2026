@@ -32,7 +32,8 @@ The bridge only ever makes **outbound** HTTP requests — customers never open p
 
 ```
 api/          serverless functions (incl. scan.js, scan-status.js)
-lib/          admin init, firestore, crypto, auth, http spine
+lib/          admin init, firestore, crypto, auth, http spine, lang (reply-language
+              detector), ask-persona (Ask brain + no-key fallback)
 lib/serverAccess/  read-only adapter layer (zip/scan-pack/dir/bridge/ftp-stub)
 lib/scanner/  the Server Scanner: parsers, detectors, checks/, report, orchestrator
 app/          index.html (site+console), dashboard.html (+ Server Report), firebase-config.js
@@ -44,6 +45,8 @@ fivem-bridge/ the customer-installed resource (server.lua + read-only scan.lua)
 backend/      original standalone demo (Express + Claude BYOK) — still maintained
 docs/         this documentation + showcase page (served at /docs/)
 ```
+
+**Ask mode & reply language.** The reply language always follows the language the operator *wrote in*, per message — `lib/lang.js` decides Arabic vs English by letter share (dominant script wins; mixed/letter-less falls back to the tenant default), and `/api/command` threads that language through both the Ask answer and the Run confirmation (`actions.friendlyMessage` is bilingual). The Ask assistant's persona and product knowledge live once in `lib/ask-persona.js`, shared by the Gemini system prompt and the deterministic no-key fallback, so both explain (never deflect), stay concrete about the tenant's own server, and read natively in Arabic.
 
 The **Server Scanner** (read-only FiveM analysis — foundation for the Doctor and AI Installer) has its own doc: [SCANNER.md](SCANNER.md). The **Whitelist Officer** (AI-interviewed applications, public `/apply/{slug}` + owner review) has [WHITELIST.md](WHITELIST.md); its engines live in `lib/whitelist/` and `app/apply.html` is the public page. **The Concierge** (in-game onboarding for new players — greet, ask, waypoint, check-in, EN/AR, **notify-only**) has [CONCIERGE.md](CONCIERGE.md); its engines live in `lib/concierge/`, the bridge relays events on the existing outward poll, and it reuses the scanner report to recommend real destinations.
 

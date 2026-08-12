@@ -123,7 +123,7 @@ lib/scanner/  the read-only Server Scanner (parsers, detectors, checks/, report)
 lib/whitelist/ the AI Whitelist Officer (interview, scoring, decide) — docs/WHITELIST.md
 lib/concierge/ the notify-only in-game Concierge (session, recommend, messages, analytics) — docs/CONCIERGE.md
 providers/    gemini.js (forced function calling) · claude.js (stub) · fake.js (test-only) · index.js
-tests/        the 185-test suite (node:test × Firebase emulators) — docs/TESTING.md
+tests/        the 226-test suite (node:test × Firebase emulators) — docs/TESTING.md
 scripts/      dev-server, seed, activate, smoke-emulator
 fivem-bridge/ the Lua resource customers install (server bridge + concierge.lua)
 backend/      the original standalone single-tenant demo (Express + Claude) — still works:
