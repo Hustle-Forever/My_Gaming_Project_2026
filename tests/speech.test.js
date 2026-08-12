@@ -1,9 +1,9 @@
-// M4: the browser-TTS engine (app/speech.js). Driven in jsdom with a mocked
-// speechSynthesis. Proves: auto-speak fires for voice input and NOT for typed;
-// manual play always works; the voice matches the reply language; a new
-// utterance cancels the previous one; the Settings toggle is respected;
-// markdown is stripped and length capped; missing voices degrade silently;
-// async voice loading (voiceschanged) is handled.
+// M4-driver: the TTS device driver (app/speech.js). Driven in a vm sandbox with
+// a mock speechSynthesis + a controllable clock, proving the real-browser
+// guarantees the state machine relies on: onDone ALWAYS fires (end / error /
+// watchdog), cancel() suppresses onDone, cancelAndWait() waits for `.speaking`
+// to clear, voices load async (voiceschanged) with a timeout, the voice matches
+// the language, markdown is stripped + capped, and missing voices degrade.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
@@ -12,115 +12,132 @@ const vm = require('node:vm');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'app', 'speech.js'), 'utf8');
 
-// A fake speechSynthesis + utterance, capturing what would be spoken.
-function makeEnv(voices = []) {
-  const spoken = [];
-  let cancels = 0;
-  let voicesChangedHandler = null;
-  const synth = {
-    _voices: voices,
-    getVoices() { return this._voices; },
-    speak(u) { spoken.push(u); u._started = true; if (u.onstart) u.onstart({}); },
-    cancel() { cancels++; const last = spoken[spoken.length - 1]; if (last && !last._ended && last.onend) { last._ended = true; last.onend({}); } },
-    set onvoiceschanged(fn) { voicesChangedHandler = fn; },
-    get onvoiceschanged() { return voicesChangedHandler; },
+function makeClock() {
+  let seq = 1, t = 0; const timers = new Map(); const intervals = new Map();
+  return {
+    now: () => t,
+    setTimeout: (fn, ms) => { const id = seq++; timers.set(id, { fn, at: t + (ms || 0) }); return id; },
+    clearTimeout: (id) => timers.delete(id),
+    setInterval: (fn, ms) => { const id = seq++; intervals.set(id, { fn, ms }); return id; },
+    clearInterval: (id) => intervals.delete(id),
+    advance(ms) { t += ms; const due = [...timers.entries()].filter(([, x]) => x.at <= t); for (const [id, x] of due) { if (timers.has(id)) { timers.delete(id); x.fn(); } } },
+    timers: () => timers.size,
+    intervals: () => intervals.size,
   };
-  function Utt(text) { this.text = text; this.lang = ''; this.voice = null; this.rate = 1; this.onstart = null; this.onend = null; this.onerror = null; }
-  const win = {};
-  const sandbox = {
-    window: win,
-    speechSynthesis: synth,
-    SpeechSynthesisUtterance: Utt,
-    setTimeout, clearTimeout, console,
-  };
-  sandbox.window.speechSynthesis = synth;
-  sandbox.window.SpeechSynthesisUtterance = Utt;
-  vm.createContext(sandbox);
-  vm.runInContext(SRC, sandbox);
-  return { S: sandbox.window.M2Speech, spoken, synth, fireVoicesChanged: (v) => { synth._voices = v; if (voicesChangedHandler) voicesChangedHandler(); }, get cancels() { return cancels; } };
 }
 
-const arVoice = { name: 'Majed', lang: 'ar-SA' };
+function makeEnv(voices = []) {
+  const spoken = []; let cancels = 0; let speakingFlag = false; let vcHandler = null;
+  const clk = makeClock();
+  const synth = {
+    _voices: voices,
+    get speaking() { return speakingFlag; },
+    getVoices() { return this._voices; },
+    speak(u) { spoken.push(u); speakingFlag = true; u._u = u; if (u.onstart) u.onstart({}); },
+    cancel() { cancels++; speakingFlag = false; },
+    pause() {}, resume() {},
+    addEventListener(name, fn) { if (name === 'voiceschanged') vcHandler = fn; },
+    removeEventListener() { vcHandler = null; },
+  };
+  function Utt(text) { this.text = text; this.lang = ''; this.voice = null; this.rate = 1; this.onstart = null; this.onend = null; this.onerror = null; }
+  const win = { speechSynthesis: synth, SpeechSynthesisUtterance: Utt, isSecureContext: true };
+  const sandbox = { window: win, speechSynthesis: synth, SpeechSynthesisUtterance: Utt, console,
+    setTimeout: clk.setTimeout, clearTimeout: clk.clearTimeout, setInterval: clk.setInterval, clearInterval: clk.clearInterval };
+  vm.createContext(sandbox);
+  vm.runInContext(SRC, sandbox);
+  return {
+    S: win.M2Speech, spoken, synth, clk,
+    endLast() { const u = spoken[spoken.length - 1]; speakingFlag = false; if (u && u.onend) u.onend({}); },
+    errLast() { const u = spoken[spoken.length - 1]; speakingFlag = false; if (u && u.onerror) u.onerror({}); },
+    fireVoicesChanged(v) { synth._voices = v; if (vcHandler) vcHandler(); },
+    isSpeaking() { return speakingFlag; },
+    get cancels() { return cancels; },
+  };
+}
 const enVoice = { name: 'Samantha', lang: 'en-US' };
+const arVoice = { name: 'Majed', lang: 'ar-SA' };
 
-test('default mode "voice": auto-speaks a voice-sourced reply, skips a typed one', () => {
-  const { S, spoken } = makeEnv([enVoice]);
-  assert.equal(S.getMode(), 'voice');
-  assert.equal(S.speak('hello there', { lang: 'en', source: 'voice' }), true);
-  assert.equal(spoken.length, 1);
-  assert.equal(S.speak('typed reply', { lang: 'en', source: 'auto' }), false, 'typed input does not auto-speak');
-  assert.equal(spoken.length, 1);
+test('onDone fires once on natural end', () => {
+  const env = makeEnv([enVoice]); const reasons = [];
+  const ok = env.S.speak('hello there', { lang: 'en', source: 'voice', onDone: (r) => reasons.push(r) });
+  assert.equal(ok, true);
+  env.endLast();
+  assert.deepEqual(reasons, ['end']);
 });
 
-test('manual play always speaks regardless of source', () => {
-  const { S, spoken } = makeEnv([enVoice]);
-  assert.equal(S.speak('play me', { lang: 'en', source: 'manual' }), true);
-  assert.equal(spoken.length, 1);
+test('onDone fires via WATCHDOG when onend never comes (the core hang fix)', () => {
+  const env = makeEnv([enVoice]); const reasons = [];
+  env.S.speak('a fairly ordinary reply', { lang: 'en', source: 'voice', onDone: (r) => reasons.push(r) });
+  // never call endLast(); advance past the watchdog
+  env.clk.advance(25000);
+  assert.deepEqual(reasons, ['watchdog'], 'the machine can never hang waiting on onend');
 });
 
-test('mode "always" speaks typed replies too; mode "off" speaks nothing automatically', () => {
-  const a = makeEnv([enVoice]);
-  a.S.setMode('always');
-  assert.equal(a.S.speak('x', { lang: 'en', source: 'auto' }), true);
-
-  const b = makeEnv([enVoice]);
-  b.S.setMode('off');
-  assert.equal(b.S.speak('x', { lang: 'en', source: 'voice' }), false);
-  assert.equal(b.spoken.length, 0);
+test('cancel() suppresses onDone (the machine drives the next state itself)', () => {
+  const env = makeEnv([enVoice]); let called = false;
+  env.S.speak('speaking now', { lang: 'en', source: 'voice', onDone: () => { called = true; } });
+  env.S.cancel();
+  env.clk.advance(30000);
+  assert.equal(called, false, 'no onDone after an explicit cancel');
 });
 
-test('voice matches the reply language', () => {
-  const { S, spoken } = makeEnv([enVoice, arVoice]);
-  S.speak('مرحبا', { lang: 'ar', source: 'manual' });
-  assert.equal(spoken[0].voice, arVoice, 'picked the ar-* voice');
-  S.speak('hello', { lang: 'en', source: 'manual' });
-  assert.equal(spoken[1].voice, enVoice, 'picked the en-* voice');
-});
-
-test('a new utterance cancels the in-progress one (never overlap)', () => {
+test('a new speak cancels the previous utterance (never overlap)', () => {
   const env = makeEnv([enVoice]);
   env.S.speak('first', { lang: 'en', source: 'manual' });
   env.S.speak('second', { lang: 'en', source: 'manual' });
-  assert.ok(env.cancels >= 1, 'cancel called before the second utterance');
+  assert.ok(env.cancels >= 1);
   assert.equal(env.spoken.length, 2);
 });
 
-test('markdown/symbols are stripped and length is capped before speaking', () => {
-  const { S, spoken } = makeEnv([enVoice]);
-  S.speak('**Bold** _italic_ `code` [link](http://x) # heading', { lang: 'en', source: 'manual' });
-  const t = spoken[0].text;
-  assert.ok(!/[*_`#]/.test(t), 'symbols stripped: ' + t);
-  assert.ok(/Bold/.test(t) && /italic/.test(t) && /link/.test(t));
-
-  const long = 'a'.repeat(2000);
-  S.speak(long, { lang: 'en', source: 'manual' });
-  assert.ok(spoken[1].text.length <= S.CAP, 'capped to ' + S.CAP);
+test('cancelAndWait resolves after speaking clears', () => {
+  const env = makeEnv([enVoice]); let resolved = false;
+  env.S.speak('talking', { lang: 'en', source: 'voice' });
+  assert.equal(env.isSpeaking(), true);
+  env.S.cancelAndWait(() => { resolved = true; });
+  assert.equal(env.isSpeaking(), false, 'cancel cleared speaking');
+  assert.equal(resolved, true);
 });
 
-test('missing voices degrade silently — still speaks, no throw', () => {
-  const { S, spoken } = makeEnv([]); // no voices installed
-  assert.doesNotThrow(() => S.speak('hello', { lang: 'en', source: 'manual' }));
-  assert.equal(spoken.length, 1);
-  assert.equal(spoken[0].voice, null, 'no voice object, but lang is still set');
-  assert.ok(/en/.test(spoken[0].lang));
-});
-
-test('voices that load asynchronously (voiceschanged) are picked up', () => {
-  const env = makeEnv([]); // empty at first
+test('voice matches the reply language; missing → degrades (no throw, lang still set)', () => {
+  const env = makeEnv([enVoice, arVoice]);
   env.S.speak('مرحبا', { lang: 'ar', source: 'manual' });
-  assert.equal(env.spoken[0].voice, null, 'no ar voice yet');
-  env.fireVoicesChanged([arVoice]); // voices arrive
-  env.S.speak('مرحبا', { lang: 'ar', source: 'manual' });
-  assert.equal(env.spoken[1].voice, arVoice, 'ar voice used once loaded');
+  assert.equal(env.spoken[0].voice, arVoice);
+  const none = makeEnv([]);
+  assert.doesNotThrow(() => none.S.speak('hello', { lang: 'en', source: 'manual' }));
+  assert.equal(none.spoken[0].voice, null);
+  assert.match(none.spoken[0].lang, /en/);
 });
 
-test('state callback fires speaking → idle across an utterance', () => {
-  const { S, synth } = makeEnv([enVoice]);
-  const states = [];
-  S.onstate((s) => states.push(s));
-  S.speak('hi', { lang: 'en', source: 'manual' }); // onstart → speaking
-  assert.equal(S.speaking(), true);
-  synth.cancel(); // simulate end
-  assert.deepEqual(states, ['speaking', 'idle']);
-  assert.equal(S.speaking(), false);
+test('markdown/symbols stripped and length capped', () => {
+  const env = makeEnv([enVoice]);
+  env.S.speak('**Bold** _it_ `c` [link](http://x) # h', { lang: 'en', source: 'manual' });
+  assert.ok(!/[*_`#]/.test(env.spoken[0].text));
+  env.S.speak('a'.repeat(2000), { lang: 'en', source: 'manual' });
+  assert.ok(env.spoken[1].text.length <= env.S.CAP);
+});
+
+test('voiceschanged: ensureVoices waits then resolves with loaded voices', () => {
+  const env = makeEnv([]); let got = null;
+  env.S.ensureVoices((v) => { got = v; }, 1500);
+  assert.equal(got, null, 'not resolved while empty');
+  env.fireVoicesChanged([arVoice]);
+  assert.ok(got && got.length === 1, 'resolved once voices arrived');
+});
+
+test('ensureVoices resolves on timeout even if voiceschanged never fires', () => {
+  const env = makeEnv([]); let got = null;
+  env.S.ensureVoices((v) => { got = v; }, 1500);
+  env.clk.advance(1600);
+  assert.ok(got !== null, 'resolved after the timeout');
+});
+
+test('source gate: voice speaks in default mode, typed does not; off/always respected', () => {
+  const env = makeEnv([enVoice]);
+  assert.equal(env.S.speak('x', { lang: 'en', source: 'voice' }), true);
+  env.S.cancel();
+  assert.equal(env.S.speak('x', { lang: 'en', source: 'auto' }), false);
+  env.S.setMode('always');
+  assert.equal(env.S.speak('x', { lang: 'en', source: 'auto' }), true);
+  env.S.setMode('off');
+  assert.equal(env.S.speak('x', { lang: 'en', source: 'voice' }), false);
 });
