@@ -569,7 +569,7 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
     <div class="orb-wrap" id="lisOrb"><div class="orb-halo" id="halo"></div><div class="orb-ring" id="ring"></div><div class="orb"></div></div>
     <div class="wave" id="wave"></div>
     <div class="ltxt" id="ltxt" data-i="listening">Listening…</div>
-    <button class="lstop" onclick="stopMic()"><svg viewBox="0 0 24 24" fill="none"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg><span data-i="stop">Stop</span></button>
+    <button class="lstop" onclick="stopListen()"><svg viewBox="0 0 24 24" fill="none"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg><span data-i="stop">Stop</span></button>
     <div class="lhint" data-i="listenHint">Speak your command — it sends automatically</div>
   </div>
 
@@ -741,10 +741,12 @@ function initSpeech(){
  let saved="voice";try{saved=localStorage.getItem("m2.voice")||"voice";}catch(e){}
  setVoiceMode(saved);
  if(window.M2Speech)M2Speech.onstate(function(s){
-  const bar=$("speakbar");if(bar)bar.classList.toggle("show",s==="speaking");
-  if(s!=="speaking"&&$("speakState"))$("speakState").textContent=t("speaking");
+  if(s==="speaking")showSpeakbar(t("speaking"));else hideSpeakbar();
+  if(s==="idle"&&PENDING_RELISTEN){PENDING_RELISTEN=false;relisten();}   // speech finished → listen again
  });
- window.addEventListener("beforeunload",function(){try{if(window.M2Speech)M2Speech.cancel();}catch(e){}});}
+ window.addEventListener("beforeunload",function(){try{if(window.M2Speech)M2Speech.cancel();}catch(e){}});
+ // small seam for tests to observe/limit the conversation loop
+ window.M2Conv={get session(){return VOICE_SESSION;},get turns(){return CONV_TURNS;},setMaxTurns:function(n){MAX_TURNS=n;}};}
 function setLang(l){LANG=l;
  $("lEn").classList.toggle("on",l==="en");$("lAr").classList.toggle("on",l==="ar");
  $("gEn").classList.toggle("on",l==="en");$("gAr").classList.toggle("on",l==="ar");
@@ -942,9 +944,11 @@ function addSpeakBtn(bubble,text,lang){
 async function send(pre,source){
  source=source||"type";
  if(window.M2Speech)M2Speech.cancel();     // a new message interrupts any spoken reply
- if(source!=="voice")endConversation();     // typing breaks a hands-free voice session
+ if(source==="voice")VOICE_SESSION=true;    // a voice-sourced exchange is hands-free
+ else endConversation();                    // typing breaks any hands-free voice session
  const inp=$("cmd");const x=(pre!==undefined?pre:inp.value).trim();if(!x)return;
  inp.value="";const b=addU(x);const mode=MODE;
+ if(source==="voice")showSpeakbar(t("thinking"));   // state: listening → THINKING → speaking
  if(SESSION&&!SESSION.active)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked",link:{href:"/dashboard#plan",label:t("planLink")}});
  if(LOCAL_PREVIEW&&!CONFIG.BACKEND_URL&&(!SESSION||SESSION.token==="preview"))
   return setTimeout(()=>{if(mode==="ask"){const a=pAsk(x);fillAsk(b,a.text,a.lang);speakReply(a.text,a.lang,source);}else{const rr=pRun(x);fillRun(b,rr);speakReply(rr.message,rr.lang,source);}},550);
@@ -961,7 +965,7 @@ async function send(pre,source){
   const lang=d.lang||detectLang(x,LANG);
   if(mode==="ask"){fillAsk(b,d.reply||"",lang);speakReply(d.reply||"",lang,source);}
   else{fillRun(b,{action:d.action||"none",message:d.message||"",status:d.action==="none"?"none":(d.queued?"queued":"none"),lang});speakReply(d.message||"",lang,source);}
- }catch(e){refreshStat("off");fillRun(b,{action:"none",message:t("stOff"),status:"off"});}
+ }catch(e){refreshStat("off");fillRun(b,{action:"none",message:t("stOff"),status:"off"});endConversation();} // error → stop the loop
 }
 // client-side language guess, mirrors lib/lang.js (used for the offline preview
 // and as a fallback when the server didn't echo a language).
@@ -970,14 +974,32 @@ function detectLang(text,fb){fb=fb||"en";const s=String(text||"");
  const en=(s.match(/[A-Za-z]/g)||[]).length;const tot=ar+en;if(!tot)return fb;
  if(ar>en&&ar/tot>=.6)return "ar";if(en>ar&&en/tot>=.6)return "en";return fb;}
 function speakReply(text,lang,source){
- if(!text||!window.M2Speech||!M2Speech.supported())return;
- M2Speech.speak(text,{lang:lang||detectLang(text,LANG),source:source==="voice"?"voice":"auto"});
- if(source==="voice")afterVoiceReply();   // M5: keep the conversation going
+ let spoke=false;
+ if(text&&window.M2Speech&&M2Speech.supported())
+  spoke=M2Speech.speak(text,{lang:lang||detectLang(text,LANG),source:source==="voice"?"voice":"auto"});
+ if(source==="voice")afterVoiceReply(spoke);   // keep the hands-free conversation going
 }
 function stopSpeak(){if(window.M2Speech)M2Speech.cancel();endConversation();}
-// --- continuous conversation (M5); defined fully below ---
-function endConversation(){VOICE_SESSION=false;}
-function afterVoiceReply(){/* M5: relisten */}
+
+/* --- continuous conversation (M5) ---
+   When the exchange began by voice, keep it hands-free: listen → think → speak
+   → listen, automatically, until the user stops, goes silent, an error occurs,
+   or a turn cap is hit. Typing never starts this loop. */
+let CONV_TURNS=0, PENDING_RELISTEN=false, MAX_TURNS=12;
+function showSpeakbar(txt){const b=$("speakbar");if(!b)return;const st=$("speakState");if(st&&txt)st.textContent=txt;b.classList.add("show");}
+function hideSpeakbar(){const b=$("speakbar");if(b)b.classList.remove("show");}
+function endConversation(){VOICE_SESSION=false;PENDING_RELISTEN=false;CONV_TURNS=0;hideSpeakbar();}
+function voiceLoopContinue(){return VOICE_SESSION&&CONV_TURNS<MAX_TURNS;}
+// Called after a voice-sourced reply is delivered. `spoke` = did TTS actually play.
+function afterVoiceReply(spoke){
+ if(!VOICE_SESSION)return;
+ CONV_TURNS++;
+ if(!voiceLoopContinue()){endConversation();return;}          // turn cap → stop
+ if(spoke){PENDING_RELISTEN=true;}                             // relisten once speech ends
+ else{hideSpeakbar();setTimeout(function(){if(VOICE_SESSION)relisten();},400);} // nothing spoken
+}
+function relisten(){if(!VOICE_SESSION||lis||!rec)return;hideSpeakbar();toggleMic();}
+function stopListen(){endConversation();stopMic();}            // the listening-overlay Stop
 function cls(s){s=s.toLowerCase().replace(/[\u064B-\u0652]/g,"");const h=(...w)=>w.some(x=>s.includes(x));
  if(h("car","vehicle","police","سيار","مركب","شرط"))return"spawn_vehicle";
  if(h("rain","snow","weather","fog","مطر","ثلج","طقس"))return"set_weather";
@@ -1007,8 +1029,8 @@ function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecog
   for(let i=e.resultIndex;i<e.results.length;i++){const s=e.results[i][0].transcript;e.results[i].isFinal?fi+=s:it+=s;}
   const sh=(fi||it).trim();if(sh){$("ltxt").textContent=sh;$("ltxt").classList.add("has");}
   if(fi.trim()){const x=fi.trim();heard=true;stopMic();setTimeout(()=>send(x,"voice"),250);}};
- rec.onend=()=>{if(lis){const had=heard;stopMic();if(!had)sysMsg(t("micNothing"));}};
- rec.onerror=e=>{const kind=e.error;stopMic();
+ rec.onend=()=>{if(lis){const had=heard;stopMic();if(!had){endConversation();sysMsg(t("micNothing"));}}}; // silence → stop the loop
+ rec.onerror=e=>{const kind=e.error;stopMic();endConversation();   // error → stop the loop
   if(kind==="not-allowed"||kind==="service-not-allowed")sysMsg(t("micDenied"));
   else if(kind==="no-speech")sysMsg(t("micNothing"));};}
 async function toggleMic(){
