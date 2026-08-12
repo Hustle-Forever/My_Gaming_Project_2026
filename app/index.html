@@ -309,6 +309,24 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 .lstop{display:flex;align-items:center;gap:9px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);
  border-radius:999px;padding:13px 24px;font-family:var(--sans);font-size:14.5px;font-weight:600;cursor:pointer}
 .lstop svg{width:15px;height:15px}
+/* speaking indicator: a small pill above the composer with a gently pulsing
+   orb (distinct from the listening overlay's reactive orb) + a visible Stop */
+.speakbar{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:13;
+ display:none;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line-2);border-radius:999px;
+ padding:8px 8px 8px 14px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.speakbar.show{display:flex}
+.speakbar .sorb{position:relative;width:26px;height:26px;flex:0 0 auto}
+.speakbar .sorb .orb{position:absolute;inset:0;animation:spk 1.7s ease-in-out infinite}
+@keyframes spk{0%,100%{transform:scale(.86);opacity:.7}50%{transform:scale(1.04);opacity:1}}
+.speakbar .stxt{font-size:13.5px;color:var(--dim);font-weight:500}
+.speakbar .sstop{display:flex;align-items:center;gap:7px;border:0;background:var(--surface-3);color:var(--text);
+ border-radius:999px;padding:8px 15px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer}
+.speakbar .sstop svg{width:13px;height:13px}
+/* manual "play reply" speaker button on assistant messages */
+.spk{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;
+ border:1px solid var(--line);background:var(--surface-2);color:var(--dim);cursor:pointer;padding:0}
+.spk:hover{color:var(--text);border-color:var(--line-2)}
+.spk svg{width:15px;height:15px}
 .lhint{font-size:12px;color:var(--faint)}
 /* sheet */
 .bd{position:absolute;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.2s;z-index:5}
@@ -555,11 +573,19 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
     <div class="lhint" data-i="listenHint">Speak your command — it sends automatically</div>
   </div>
 
+  <!-- speaking indicator: a gentle orb pulse + a visible Stop while M2 talks -->
+  <div class="speakbar" id="speakbar">
+    <span class="sorb"><div class="orb"></div></span>
+    <span class="stxt" id="speakState" data-i="speaking">Speaking…</span>
+    <button class="sstop" onclick="stopSpeak()"><svg viewBox="0 0 24 24" fill="none"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg><span data-i="stop">Stop</span></button>
+  </div>
+
   <div class="bd" id="bd" onclick="closeSheet()"></div>
   <div class="sheet" id="sheet">
     <div class="sh"><h3 data-i="setTitle">Settings</h3><div class="icb" onclick="closeSheet()"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div></div>
     <div class="rw"><div class="lb" data-i="theme">Theme</div><div class="seg"><button id="sD" class="on" onclick="setTheme('dark')" data-i="dark">Dark</button><button id="sL" onclick="setTheme('light')" data-i="light">Light</button></div></div>
     <div class="rw"><div class="lb" data-i="language">Language</div><div class="seg"><button id="gEn" class="on" onclick="setLang('en')">EN</button><button id="gAr" onclick="setLang('ar')">ع</button></div></div>
+    <div class="rw"><div><div class="lb" data-i="voiceReplies">Voice replies</div><div class="sb" data-i="voiceRepliesSub">M2 speaks its answers aloud</div></div><div class="seg" id="vseg"><button id="vOff" onclick="setVoiceMode('off')" data-i="vOff">Off</button><button id="vSpk" class="on" onclick="setVoiceMode('voice')" data-i="vWhenSpeak">When I speak</button><button id="vOn" onclick="setVoiceMode('always')" data-i="vAlways">On</button></div></div>
     <div class="rw"><div><div class="lb" data-i="advanced">Backend URL</div><div class="sb" data-i="advancedSub">Blank = same site</div></div><input class="fin" id="fUrl" type="text" placeholder="https://…"></div>
     <button class="so" onclick="signOut()" data-i="signOut">Sign out</button>
   </div>
@@ -567,6 +593,7 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 
 <script src="firebase-config.js"></script>
 <script src="fx.js"></script>
+<script src="speech.js"></script>
 <script type="module">
 /* Firebase Auth wiring — reads the public web config from firebase-config.js
    (shared with dashboard.html). Exposes window.__m2Firebase for the
@@ -622,6 +649,8 @@ const CONFIG={BACKEND_URL:""};
 const LOCAL_PREVIEW=false;             // production: uses the real backend + Firebase Auth
 const FXS={};                          // WebGL instances (hero orb, hero grid, listening orb)
 let LANG="en",THEME="dark",MODE="run",SESSION=null,AUTHTAB="signup";
+let VOICEMODE="voice";              // 'off' | 'always' | 'voice' (spoken replies)
+let VOICE_SESSION=false;            // did the current exchange start hands-free (by voice)?
 
 const I18N={
  en:{title:"How can I help your server?",sub:"Talk or type — Run executes in-game, Ask just answers.",
@@ -631,6 +660,8 @@ const I18N={
   advanced:"Backend URL",advancedSub:"Blank = same site. Another origin needs ALLOWED_ORIGIN set on the API.",signOut:"Sign out",
   modeRun:"Run",modeAsk:"Ask",answer:"Answer",listening:"Listening…",stop:"Stop",
   listenHint:"Speak your command — it sends automatically",
+  voiceReplies:"Voice replies",voiceRepliesSub:"M2 speaks its answers aloud",vOff:"Off",vWhenSpeak:"When I speak",vAlways:"On",
+  speaking:"Speaking…",thinking:"Thinking…",playReply:"Play reply",convStop:"End conversation",
   ok:"Connected",off:"Offline",locked:"Plan inactive",
   stQueued:"Sent to server",stNone:"Didn’t catch that",stAuth:"Session expired — sign in again",
   stOff:"Couldn’t reach the server — check your connection and try again",stLocked:"Subscription inactive",
@@ -655,6 +686,8 @@ const I18N={
   advanced:"رابط الـBackend",advancedSub:"فارغ = نفس الموقع. أصل مختلف يحتاج ALLOWED_ORIGIN على الخادم.",signOut:"تسجيل الخروج",
   modeRun:"تنفيذ",modeAsk:"سؤال",answer:"إجابة",listening:"أستمع…",stop:"إيقاف",
   listenHint:"قل أمرك — يُرسل تلقائيًا",
+  voiceReplies:"الردود الصوتية",voiceRepliesSub:"ينطق M2 إجاباته بصوت مسموع",vOff:"إيقاف",vWhenSpeak:"عند كلامي",vAlways:"تشغيل",
+  speaking:"أتحدث…",thinking:"أفكّر…",playReply:"تشغيل الرد",convStop:"إنهاء المحادثة",
   ok:"متصل",off:"غير متصل",locked:"الاشتراك موقوف",
   stQueued:"أُرسل للسيرفر",stNone:"ما فهمت الطلب",stAuth:"انتهت الجلسة — سجّل الدخول من جديد",
   stOff:"تعذّر الوصول للسيرفر — تأكد من الاتصال وحاول مرة ثانية",stLocked:"الاشتراك غير مفعّل",
@@ -696,7 +729,22 @@ function setTheme(x){THEME=x;document.documentElement.dataset.theme=x;$("thBtn")
  if(FXS.grid){FXS.grid.setColor(x==="dark"?"#C4F042":"#8FBE18");FXS.grid.setOpacity(x==="dark"?.3:.2);}}
 function toggleTheme(){setTheme(THEME==="dark"?"light":"dark");}
 function setMode(m){MODE=m;document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+ if(window.M2Speech)M2Speech.cancel();endConversation();   // switching modes interrupts speech + any voice loop
  $("cmd").placeholder=t(m==="ask"?"phAsk":"phRun");$("snd").classList.toggle("ask",m==="ask");}
+function setVoiceMode(m){VOICEMODE=(m==="off"||m==="always"||m==="voice")?m:"voice";
+ if(window.M2Speech)M2Speech.setMode(VOICEMODE);
+ try{localStorage.setItem("m2.voice",VOICEMODE);}catch(e){}
+ ["vOff","vSpk","vOn"].forEach(id=>{const el=$(id);if(el)el.classList.remove("on");});
+ const on=$(VOICEMODE==="off"?"vOff":VOICEMODE==="always"?"vOn":"vSpk");if(on)on.classList.add("on");}
+// Wire the engine's speaking state to the UI (orb pulse + Stop) once at boot.
+function initSpeech(){
+ let saved="voice";try{saved=localStorage.getItem("m2.voice")||"voice";}catch(e){}
+ setVoiceMode(saved);
+ if(window.M2Speech)M2Speech.onstate(function(s){
+  const bar=$("speakbar");if(bar)bar.classList.toggle("show",s==="speaking");
+  if(s!=="speaking"&&$("speakState"))$("speakState").textContent=t("speaking");
+ });
+ window.addEventListener("beforeunload",function(){try{if(window.M2Speech)M2Speech.cancel();}catch(e){}});}
 function setLang(l){LANG=l;
  $("lEn").classList.toggle("on",l==="en");$("lAr").classList.toggle("on",l==="ar");
  $("gEn").classList.toggle("on",l==="en");$("gAr").classList.toggle("on",l==="ar");
@@ -870,24 +918,36 @@ function addU(x){$("chero").classList.add("min");
  const g=document.createElement("div");g.className="grp";
  g.innerHTML=`<div class="m u${MODE==="ask"?" ask":""}"></div><div class="m b"><div class="typ"><i></i><i></i><i></i></div></div>`;
  g.querySelector(".m.u").textContent=x;$("feed").appendChild(g);down();return g.querySelector(".m.b");}
-function fillRun(b,{action,message,status,link}){const a=ACT[action]||ACT.none;
+function fillRun(b,{action,message,status,link,lang}){const a=ACT[action]||ACT.none;
  const c={queued:{k:"",i:"stQueued"},none:{k:"dim",i:"stNone"},auth:{k:"err",i:"stAuth"},off:{k:"warn",i:"stOff"},locked:{k:"err",i:"stLocked"},rate:{k:"warn",i:"stRate"},err:{k:"err",i:"stErr"}}[status]||{k:"",i:"stQueued"};
  b.innerHTML=`<span class="bg ${a.c}">${a[LANG]}</span><div class="tx"></div><div class="chip2 ${c.k}"><span class="d"></span>${t(c.i)}</div>`;
  b.querySelector(".tx").textContent=message;
  if(link){const el=document.createElement("a");el.href=link.href;el.textContent=link.label+" →";el.style.cssText="display:inline-block;margin-top:8px";b.appendChild(el);}
+ if(status==="queued"||status==="none")addSpeakBtn(b,message,lang);
  down();}
 function sysMsg(x){$("chero").classList.add("min");
  const g=document.createElement("div");g.className="grp";
  g.innerHTML='<div class="m b" style="color:var(--dim);font-size:13px"></div>';
  g.querySelector(".m").textContent=x;$("feed").appendChild(g);down();}
-function fillAsk(b,x){b.innerHTML=`<span class="bg v">${t("answer")}</span><div class="tx"></div>`;b.querySelector(".tx").textContent=x;down();}
+function fillAsk(b,x,lang){b.innerHTML=`<span class="bg v">${t("answer")}</span><div class="tx"></div>`;b.querySelector(".tx").textContent=x;addSpeakBtn(b,x,lang);down();}
+// a small speaker button on assistant messages, to replay (or first-play a
+// typed reply) on demand. Only shown when the browser supports TTS.
+function addSpeakBtn(bubble,text,lang){
+ if(!window.M2Speech||!M2Speech.supported()||!text)return;
+ const btn=document.createElement("button");btn.className="spk";btn.type="button";btn.title=t("playReply");btn.setAttribute("aria-label",t("playReply"));
+ btn.innerHTML='<svg viewBox="0 0 24 24" fill="none"><path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M15.5 9a4 4 0 010 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+ btn.onclick=function(){M2Speech.speak(text,{lang:lang||detectLang(text,LANG),source:"manual"});};
+ bubble.appendChild(btn);}
 
-async function send(pre){
+async function send(pre,source){
+ source=source||"type";
+ if(window.M2Speech)M2Speech.cancel();     // a new message interrupts any spoken reply
+ if(source!=="voice")endConversation();     // typing breaks a hands-free voice session
  const inp=$("cmd");const x=(pre!==undefined?pre:inp.value).trim();if(!x)return;
  inp.value="";const b=addU(x);const mode=MODE;
  if(SESSION&&!SESSION.active)return fillRun(b,{action:"none",message:t("stLocked"),status:"locked",link:{href:"/dashboard#plan",label:t("planLink")}});
  if(LOCAL_PREVIEW&&!CONFIG.BACKEND_URL&&(!SESSION||SESSION.token==="preview"))
-  return setTimeout(()=>{mode==="ask"?fillAsk(b,pAsk()):fillRun(b,pRun(x));},550);
+  return setTimeout(()=>{if(mode==="ask"){const a=pAsk(x);fillAsk(b,a.text,a.lang);speakReply(a.text,a.lang,source);}else{const rr=pRun(x);fillRun(b,rr);speakReply(rr.message,rr.lang,source);}},550);
  try{
   const r=await authedFetch("/api/command",{method:"POST",body:JSON.stringify({text:x,mode})});
   if(r.status===401){fillRun(b,{action:"none",message:t("stAuth"),status:"auth"});return sessionExpired();}
@@ -898,10 +958,26 @@ async function send(pre){
   if(r.status===429)return fillRun(b,{action:"none",message:t("stRate"),status:"rate"});
   if(!r.ok)return fillRun(b,{action:"none",message:code==="BAD_INPUT"?t("stNone"):t("stErr"),status:code==="BAD_INPUT"?"none":"err"});
   refreshStat("ok");
-  if(mode==="ask")fillAsk(b,d.reply||"");
-  else fillRun(b,{action:d.action||"none",message:d.message||"",status:d.action==="none"?"none":(d.queued?"queued":"none")});
+  const lang=d.lang||detectLang(x,LANG);
+  if(mode==="ask"){fillAsk(b,d.reply||"",lang);speakReply(d.reply||"",lang,source);}
+  else{fillRun(b,{action:d.action||"none",message:d.message||"",status:d.action==="none"?"none":(d.queued?"queued":"none"),lang});speakReply(d.message||"",lang,source);}
  }catch(e){refreshStat("off");fillRun(b,{action:"none",message:t("stOff"),status:"off"});}
 }
+// client-side language guess, mirrors lib/lang.js (used for the offline preview
+// and as a fallback when the server didn't echo a language).
+function detectLang(text,fb){fb=fb||"en";const s=String(text||"");
+ const ar=(s.match(/[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/g)||[]).length;
+ const en=(s.match(/[A-Za-z]/g)||[]).length;const tot=ar+en;if(!tot)return fb;
+ if(ar>en&&ar/tot>=.6)return "ar";if(en>ar&&en/tot>=.6)return "en";return fb;}
+function speakReply(text,lang,source){
+ if(!text||!window.M2Speech||!M2Speech.supported())return;
+ M2Speech.speak(text,{lang:lang||detectLang(text,LANG),source:source==="voice"?"voice":"auto"});
+ if(source==="voice")afterVoiceReply();   // M5: keep the conversation going
+}
+function stopSpeak(){if(window.M2Speech)M2Speech.cancel();endConversation();}
+// --- continuous conversation (M5); defined fully below ---
+function endConversation(){VOICE_SESSION=false;}
+function afterVoiceReply(){/* M5: relisten */}
 function cls(s){s=s.toLowerCase().replace(/[\u064B-\u0652]/g,"");const h=(...w)=>w.some(x=>s.includes(x));
  if(h("car","vehicle","police","سيار","مركب","شرط"))return"spawn_vehicle";
  if(h("rain","snow","weather","fog","مطر","ثلج","طقس"))return"set_weather";
@@ -909,17 +985,18 @@ function cls(s){s=s.toLowerCase().replace(/[\u064B-\u0652]/g,"");const h=(...w)=
  if(h("heal","health","علاج","صحة","اشف"))return"heal_player";
  if(h("people","npc","ped","ناس","اشخاص","شخصيات"))return"spawn_npc";
  if(h("repair","fix","صلح","اصلح"))return"repair_vehicle";return"none";}
-function pRun(x){const a=cls(x);
+function pRun(x){const a=cls(x);const lang=detectLang(x,LANG);
  const m={spawn_vehicle:{en:"On it — a vehicle is on the way.",ar:"تم — المركبة في الطريق."},
   set_weather:{en:"Weather updated in-game.",ar:"تم تغيير الطقس داخل اللعبة."},
   set_time:{en:"Time set on the server.",ar:"تم ضبط الوقت في السيرفر."},
   heal_player:{en:"You’re healed up.",ar:"تم علاجك بالكامل."},
   spawn_npc:{en:"Spawning people near you.",ar:"يتم إنزال أشخاص بقربك."},
   repair_vehicle:{en:"Your vehicle is repaired.",ar:"تم إصلاح مركبتك."},
-  none:{en:"That’s not one of the in-game commands.",ar:"هذا ليس ضمن الأوامر داخل اللعبة."}}[a][LANG];
- return{action:a,message:m,status:a==="none"?"none":"queued"};}
-function pAsk(){return LANG==="ar"?"في وضع «تنفيذ» أقدر أنزّل مركبات، أغيّر الطقس والوقت، أعالج، وأصلّح المركبات."
- :"In Run mode I can spawn vehicles, change weather and time, heal, spawn NPCs, and repair vehicles.";}
+  none:{en:"That’s not one of the in-game commands.",ar:"هذا ليس ضمن الأوامر داخل اللعبة."}}[a][lang];
+ return{action:a,message:m,status:a==="none"?"none":"queued",lang};}
+function pAsk(x){const lang=detectLang(x,LANG);
+ return{lang,text:lang==="ar"?"في وضع «تنفيذ» أقدر أنزّل مركبات، أغيّر الطقس والوقت، أعالج، وأصلّح المركبات."
+  :"In Run mode I can spawn vehicles, change weather and time, heal, spawn NPCs, and repair vehicles."};}
 
 /* voice */
 let rec=null,lis=false,ac=null,an=null,ms=null,raf=null,da=null,heard=false;
@@ -929,7 +1006,7 @@ function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecog
  rec.onresult=e=>{let it="",fi="";
   for(let i=e.resultIndex;i<e.results.length;i++){const s=e.results[i][0].transcript;e.results[i].isFinal?fi+=s:it+=s;}
   const sh=(fi||it).trim();if(sh){$("ltxt").textContent=sh;$("ltxt").classList.add("has");}
-  if(fi.trim()){const x=fi.trim();heard=true;stopMic();setTimeout(()=>send(x),250);}};
+  if(fi.trim()){const x=fi.trim();heard=true;stopMic();setTimeout(()=>send(x,"voice"),250);}};
  rec.onend=()=>{if(lis){const had=heard;stopMic();if(!had)sysMsg(t("micNothing"));}};
  rec.onerror=e=>{const kind=e.error;stopMic();
   if(kind==="not-allowed"||kind==="service-not-allowed")sysMsg(t("micDenied"));
@@ -937,6 +1014,8 @@ function initVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecog
 async function toggleMic(){
  if(lis)return stopMic();
  if(!rec)return sysMsg(t("micNo"));
+ if(window.M2Speech)M2Speech.cancel();   // starting to listen interrupts any spoken reply
+ VOICE_SESSION=true;                       // this exchange is hands-free
  heard=false;
  $("ltxt").textContent=t("listening");$("ltxt").classList.remove("has");$("lis").classList.add("show");lis=true;
  rec.lang=LANG==="ar"?"ar-AE":"en-US";try{rec.start();}catch(e){}
@@ -998,7 +1077,7 @@ function initFX(){
  }catch(e){console.warn("fx init failed:",e);}
 }
 
-renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();bootSession();initFX();
+renderQuick();setTheme("dark");setLang("en");setMode("run");initVoice();initSpeech();bootSession();initFX();
 </script>
 </body>
 </html>
