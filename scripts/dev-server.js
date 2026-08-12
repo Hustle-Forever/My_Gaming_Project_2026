@@ -39,6 +39,10 @@ const API_ROUTES = {
   '/api/apply/answer': './api/apply/_answer',
   '/api/apply/submit': './api/apply/_submit',
   '/api/apply/resume': './api/apply/_resume',
+  '/api/concierge/config': './api/concierge/_config',
+  '/api/concierge/event': './api/concierge/_event',
+  '/api/concierge/reply': './api/concierge/_reply',
+  '/api/concierge/stats': './api/concierge/_stats',
 };
 
 const MIME = {
