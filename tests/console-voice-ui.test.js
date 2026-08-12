@@ -100,6 +100,27 @@ test('errors surface a visible message with the code', async () => {
   assert.match(win.document.getElementById('feed').textContent, /not-allowed/);
 });
 
+test('permission error is ACTIONABLE and surfaces the DOMException name', async () => {
+  const { win, V } = await loadConsole();
+  V.cfg().onError('not-allowed', 'mic-permission', { name: 'NotAllowedError', message: 'Permission denied' });
+  const feed = win.document.getElementById('feed').textContent;
+  assert.match(feed, /address bar|allow access/i, 'tells the user exactly how to fix it');
+  assert.match(feed, /NotAllowedError/, 'surfaces the underlying DOMException name');
+});
+
+test('start-failed shows a distinct fix + the DOMException name/message', async () => {
+  const { win, V } = await loadConsole();
+  V.cfg().onError('start-failed', 'already started', { name: 'InvalidStateError', message: 'already started' });
+  const feed = win.document.getElementById('feed').textContent;
+  assert.match(feed, /start the microphone|Couldn.t start/i);
+  assert.match(feed, /InvalidStateError/);
+});
+
+test('the machine is configured with a requestMic preflight', async () => {
+  const { V } = await loadConsole();
+  assert.equal(typeof V.cfg().requestMic, 'function', 'mic permission requested before recognition.start()');
+});
+
 test('voice debug toggle shows the panel and drives the machine', async () => {
   const { win, V } = await loadConsole();
   win.setVoiceDebug(true);

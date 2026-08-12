@@ -44,10 +44,17 @@
     stateStart = now();
     if (cfg.onState) { try { cfg.onState(state, meta || {}); } catch (e) {} }
   }
-  function emitError(code, message) {
-    lastError = { code: code, message: message, at: now() };
+  function emitError(code, message, detail) {
+    lastError = { code: code, message: message, detail: detail || null, at: now() };
     log('machine-error', lastError);
-    if (cfg.onError) { try { cfg.onError(code, message); } catch (e) {} }
+    if (cfg.onError) { try { cfg.onError(code, message, detail || null); } catch (e) {} }
+  }
+  // Map a getUserMedia / recognition DOMException to a stable code + message.
+  function micErrorInfo(err) {
+    var name = (err && err.name) || '';
+    if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') return { code: 'not-allowed', msg: 'mic-permission' };
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'NotReadableError' || name === 'TrackStartError') return { code: 'audio-capture', msg: 'mic-missing' };
+    return { code: 'start-failed', msg: (err && err.message) || 'start failed' };
   }
 
   function clearStateTimer() { if (stateTimer != null) { clrT(stateTimer); stateTimer = null; } }
@@ -137,16 +144,32 @@
     try {
       r.start();
     } catch (err) {
+      var name = err && err.name;
+      // Permission / device errors are not transient — surface them, don't retry.
+      if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'NotFoundError' || name === 'NotReadableError') {
+        var info = micErrorInfo(err);
+        emitError(info.code, info.msg, { name: name, message: err && err.message });
+        safeIdle(info.code); return;
+      }
+      // Anything other than InvalidStateError won't be fixed by a retry either.
+      if (name && name !== 'InvalidStateError') {
+        emitError('start-failed', err && err.message, { name: name, message: err && err.message });
+        safeIdle('start-failed'); return;
+      }
       // InvalidStateError: an old session lingers → abort then retry once. The
       // abort fires onend synchronously; `restarting` keeps that from being read
       // as silence and ending the conversation.
-      log('start-threw', { message: err && err.message });
+      log('start-threw', { name: name, message: err && err.message });
       restarting = true;
       try { r.abort(); } catch (e2) {}
       restarting = false;
       setT(function () {
         if (state !== S.LISTENING) return;
-        try { r.start(); } catch (e3) { emitError('start-failed', e3 && e3.message); safeIdle('start-failed'); }
+        try { r.start(); } catch (e3) {
+          var i2 = micErrorInfo(e3);
+          emitError(i2.code, i2.msg, { name: e3 && e3.name, message: e3 && e3.message });
+          safeIdle(i2.code);
+        }
       }, 150);
     }
   }
@@ -154,7 +177,26 @@
   function startListening() {
     gotFinal = false; finalText = '';
     go(S.LISTENING);
-    startRecognition();
+    // Request mic permission BEFORE recognition.start() (when the host provides
+    // requestMic). This gives a clean permission prompt + a precise error to
+    // surface, instead of an opaque start() throw. No requestMic → start directly.
+    if (cfg.requestMic) {
+      var handled = false;
+      var fail = function (err) {
+        if (handled || state !== S.LISTENING) return; handled = true;
+        var info = micErrorInfo(err);
+        emitError(info.code, info.msg, { name: err && err.name, message: err && err.message });
+        safeIdle(info.code);
+      };
+      try {
+        Promise.resolve(cfg.requestMic()).then(function () {
+          if (handled || state !== S.LISTENING) return; handled = true;
+          startRecognition();
+        }, fail);
+      } catch (e) { fail(e); }
+    } else {
+      startRecognition();
+    }
   }
 
   function onListenTimeout() { if (state === S.LISTENING) { log('listen-timeout'); try { rec && rec.stop(); } catch (e) {} onSilence(); } }

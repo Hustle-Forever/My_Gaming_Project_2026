@@ -6,6 +6,10 @@
 
 ---
 
+## 2026-08-12 — Voice: actionable start errors + mic-permission preflight
+
+- **`[start-failed]` on the live site was a dead end** — no cause, no fix. Fixed the machine: **mic permission is now requested (`getUserMedia`) BEFORE `recognition.start()`** (it was racing — the analyser's `getUserMedia` ran async/unawaited with errors swallowed), so a denial surfaces cleanly instead of an opaque `start()` throw. Errors now carry the **`DOMException` name + message**, and are mapped: `NotAllowedError`/`SecurityError` → *"Microphone blocked — click the icon in the address bar and allow access"*; `NotFoundError`/`NotReadableError` → no-device; else → *"Couldn't start the microphone — close other apps/tabs using it"*. Permission/device errors are no longer retried (only `InvalidStateError` is). Tests: +5 machine (preflight resolve/reject mapping, start-throw name), +4 console (actionable text + name surfaced + preflight configured). Re-verified the full loop in real Edge.
+
 ## 2026-08-12 — Voice deploy fix (routing + notice spam)
 
 - **`/speech.js` and `/voice.js` 404'd on Vercel** (browser refused the `text/plain` 404 body → `window.M2Voice`/`M2Speech` undefined → voice dead). Root cause: `vercel.json` had explicit rewrites for `/firebase-config.js` and `/fx.js` but none for the two files added later. Added matching rewrites so both resolve to `/app/*.js` with a JavaScript MIME type. Verified with **`scripts/verify-deployed-routing.js`** — a static server honoring `vercel.json`'s rewrites, driven in real Edge: both scripts return `text/javascript` (200), the modules execute, and the loop runs `listening→…→idle`. Also documented in FRONTEND.md that every root-level asset needs a rewrite.

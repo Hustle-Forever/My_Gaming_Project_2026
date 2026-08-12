@@ -2,14 +2,14 @@
 
 **Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-12
 
-> One command — `npm test` — boots the Firebase emulators and runs **243 tests**: 48 platform, 40 Server Scanner, 51 Whitelist Officer, 46 Concierge, and 58 Voice & Ask (reply-language, the Ask persona + fallback, the voice state machine, the TTS driver, and real-browser-verified behaviour). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators and runs **251 tests**: 48 platform, 40 Server Scanner, 51 Whitelist Officer, 46 Concierge, and 66 Voice & Ask (reply-language, the Ask persona + fallback, the voice state machine, the TTS driver, and real-browser-verified behaviour). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 243 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 251 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```

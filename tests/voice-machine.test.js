@@ -73,9 +73,10 @@ function load(opts = {}) {
     speak: (text, lang, onDone) => { speakCalls.push({ text, lang, onDone }); return true; },
     ensureSilent: (cb) => cb(),
     cancelSpeak: () => { cancelSpeakCount++; },
+    requestMic: opts.requestMic,
     onState: (s) => states.push(s),
     onEvent: (e, d) => events.push({ e, d }),
-    onError: (code, msg) => errors.push({ code, msg }),
+    onError: (code, msg, detail) => errors.push({ code, msg, detail }),
   });
   return { V, clk, rec: () => lastRec, recs, states, events, errors, handleCalls, speakCalls, cancelSpeaks: () => cancelSpeakCount };
 }
@@ -236,4 +237,53 @@ test('reply handler returning nothing → error + idle (not a hang)', () => {
   h.handleCalls[0].cb(null, 'server down');
   assert.equal(h.V.state(), 'idle');
   assert.ok(h.errors.some((e) => e.code === 'reply'));
+});
+
+test('mic preflight: requestMic runs BEFORE recognition.start(); resolves → starts', async () => {
+  let order = [];
+  const h = load({ requestMic: () => { order.push('mic'); return Promise.resolve(); } });
+  h.V.start();
+  assert.equal(h.V.state(), 'listening');
+  assert.equal(h.recs.length, 0, 'recognition NOT created/started until the mic is granted');
+  await new Promise((r) => setTimeout(r, 0));
+  order.push('start:' + h.rec().started);
+  assert.equal(h.rec().started, 1, 'recognition starts only after the preflight resolves');
+  assert.deepEqual(order, ['mic', 'start:1']);
+});
+
+test('mic preflight: NotAllowedError → actionable permission error (name surfaced), idle', async () => {
+  const err = Object.assign(new Error('Permission denied'), { name: 'NotAllowedError' });
+  const h = load({ requestMic: () => Promise.reject(err) });
+  h.V.start();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(h.V.state(), 'idle');
+  const e = h.errors.find((x) => x.code === 'not-allowed');
+  assert.ok(e && e.msg === 'mic-permission', 'mapped to a permission error');
+  assert.equal(e.detail.name, 'NotAllowedError', 'DOMException name surfaced');
+  assert.equal(h.recs.length, 0, 'recognition never created/started');
+});
+
+test('mic preflight: NotFoundError → mic-missing', async () => {
+  const err = Object.assign(new Error('no device'), { name: 'NotFoundError' });
+  const h = load({ requestMic: () => Promise.reject(err) });
+  h.V.start();
+  await new Promise((r) => setTimeout(r, 0));
+  assert.ok(h.errors.some((e) => e.code === 'audio-capture' && e.msg === 'mic-missing'));
+});
+
+test('start() throwing NotAllowedError → permission error, NO retry, name surfaced', () => {
+  const h = load({ startBehavior: function () { throw Object.assign(new Error('not allowed'), { name: 'NotAllowedError' }); } });
+  h.V.start();
+  const e = h.errors.find((x) => x.code === 'not-allowed');
+  assert.ok(e && e.detail && e.detail.name === 'NotAllowedError');
+  assert.equal(h.V.state(), 'idle');
+  assert.equal(h.rec().started, 1, 'permission errors are not retried (start called once)');
+});
+
+test('start() throwing an unknown DOMException → start-failed with the name + message', () => {
+  const h = load({ startBehavior: function () { throw Object.assign(new Error('boom'), { name: 'AbortError' }); } });
+  h.V.start();
+  const e = h.errors.find((x) => x.code === 'start-failed');
+  assert.ok(e && e.detail && e.detail.name === 'AbortError' && /boom/.test(e.detail.message), 'surfaces name + message');
+  assert.equal(h.V.state(), 'idle');
 });

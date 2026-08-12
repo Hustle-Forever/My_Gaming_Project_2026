@@ -680,7 +680,9 @@ const I18N={
   voiceReplies:"Voice replies",voiceRepliesSub:"M2 speaks its answers aloud",vOff:"Off",vWhenSpeak:"When I speak",vAlways:"On",
   speaking:"Speaking…",thinking:"Thinking…",thinkingSlow:"Still working…",playReply:"Play reply",convStop:"End conversation",
   voiceDebug:"Voice debug",voiceDebugSub:"Show the live voice pipeline",on3:"On",off3:"Off",
-  micInsecure:"Voice needs a secure page (HTTPS or localhost).",micNoDevice:"No microphone found.",
+  micInsecure:"Voice needs a secure page (HTTPS or localhost).",micNoDevice:"No microphone found — plug one in and tap the mic again.",
+  micBlocked:"Microphone blocked — click the icon in the address bar (or site settings), allow access, then tap the mic again.",
+  voiceStartFail:"Couldn’t start the microphone — close other apps or tabs using it, then tap the mic again.",
   voiceNet:"Voice service unreachable — check your connection.",voiceSlow:"That took too long — tap the mic to try again.",
   voiceErr:"Voice hit a snag — tap the mic to try again.",
   noArVoice:"No Arabic voice is installed on this device — using another voice.",
@@ -711,7 +713,9 @@ const I18N={
   voiceReplies:"الردود الصوتية",voiceRepliesSub:"ينطق M2 إجاباته بصوت مسموع",vOff:"إيقاف",vWhenSpeak:"عند كلامي",vAlways:"تشغيل",
   speaking:"أتحدث…",thinking:"أفكّر…",thinkingSlow:"ما زلت أعمل…",playReply:"تشغيل الرد",convStop:"إنهاء المحادثة",
   voiceDebug:"تشخيص الصوت",voiceDebugSub:"إظهار مسار الصوت الحيّ",on3:"تشغيل",off3:"إيقاف",
-  micInsecure:"الصوت يحتاج صفحة آمنة (HTTPS أو localhost).",micNoDevice:"لا يوجد ميكروفون.",
+  micInsecure:"الصوت يحتاج صفحة آمنة (HTTPS أو localhost).",micNoDevice:"لا يوجد ميكروفون — وصّل واحدًا واضغط المايك.",
+  micBlocked:"الميكروفون محظور — اضغط الأيقونة في شريط العنوان (أو إعدادات الموقع)، اسمح بالوصول، ثم اضغط المايك.",
+  voiceStartFail:"تعذّر تشغيل الميكروفون — أغلق التطبيقات أو التبويبات التي تستخدمه ثم اضغط المايك.",
   voiceNet:"خدمة الصوت غير متاحة — تحقق من اتصالك.",voiceSlow:"استغرق وقتًا طويلًا — اضغط المايك للمحاولة.",
   voiceErr:"واجه الصوت مشكلة — اضغط المايك للمحاولة.",
   noArVoice:"لا يوجد صوت عربي على هذا الجهاز — سنستخدم صوتًا آخر.",
@@ -1042,6 +1046,7 @@ function initVoice(){
  M2Voice.configure({
   recLang:()=>LANG==="ar"?"ar-AE":"en-US",
   handle:voiceHandle,
+  requestMic:requestMic,   // prompt/confirm mic permission BEFORE recognition.start()
   onInterim:(txt)=>{if(txt){$("ltxt").textContent=txt;$("ltxt").classList.add("has");}},
   onState:onVoiceState,
   onEvent:onVoiceEvent,
@@ -1066,7 +1071,7 @@ function onVoiceState(state){
  const listen = state==="listening";
  const capturing = listen || state==="transcribing";
  $("lis").classList.toggle("show", capturing);
- if(listen){$("ltxt").textContent=t("listening");$("ltxt").classList.remove("has");startAnalyser();}
+ if(listen){$("ltxt").textContent=t("listening");$("ltxt").classList.remove("has");}  // analyser starts when the mic is granted (requestMic)
  else stopAnalyser();
  clearThinkHint();
  const bar=$("speakbar");
@@ -1084,25 +1089,39 @@ function maybeWarnVoice(lang){
  if(lang==="ar"&&!M2Speech.hasVoiceFor("ar")&&!VOICE_WARNED.ar){VOICE_WARNED.ar=true;sysMsg(t("noArVoice"));}
 }
 function onVoiceEvent(evt,detail){DBG.last=evt;DBG.detail=detail;updateDbg();}
-function onVoiceError(code,message){
+// Actionable errors: a specific fix per kind, PLUS the underlying DOMException
+// name/message so a stuck user (or we) can see exactly what the browser said.
+function onVoiceError(code,message,detail){
  let key="voiceErr";
- if(message==="mic-permission"||code==="not-allowed"||code==="service-not-allowed")key="micDenied";
+ if(message==="mic-permission"||code==="not-allowed"||code==="service-not-allowed")key="micBlocked";
  else if(message==="mic-missing"||code==="audio-capture")key="micNoDevice";
  else if(message==="network"||code==="network")key="voiceNet";
  else if(message==="reply-timeout"||code==="timeout")key="voiceSlow";
  else if(code==="unsupported")key="micNo";
- sysMsg(t(key)+" ["+(code||message)+"]");
- DBG.err={code:code,message:message}; updateDbg();
+ else if(code==="start-failed")key="voiceStartFail";
+ const name=detail&&detail.name, dmsg=detail&&detail.message;
+ const diag = name ? (" ["+name+(dmsg?": "+dmsg:"")+"]") : (" ["+(code||message)+"]");
+ sysMsg(t(key)+diag);
+ DBG.err={code:code,message:message,name:name||null}; updateDbg();
 }
 // Latency: if "thinking" runs long, reassure instead of dead air.
 function armThinkHint(){clearThinkHint();THINK_HINT=setTimeout(()=>{if(M2Voice.state()==="thinking")showSpeakbar(t("thinkingSlow"));},2200);}
 function clearThinkHint(){if(THINK_HINT){clearTimeout(THINK_HINT);THINK_HINT=null;}}
 
+// The machine's mic-permission preflight: prompt/confirm access, and reuse the
+// granted stream to drive the listening orb. Rejects with the DOMException so
+// the machine can surface an actionable message (NotAllowedError, etc.).
+function requestMic(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)
+  return Promise.reject(Object.assign(new Error("getUserMedia unavailable"),{name:"NotFoundError"}));
+ return navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})
+  .then(function(stream){ startAnalyserWith(stream); return true; });
+}
 /* mic-level analyser → the listening orb + waveform (unchanged visuals) */
 let ac=null,an=null,ms=null,raf=null,da=null;
-async function startAnalyser(){
- if(an)return;
- try{ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+function startAnalyserWith(stream){
+ if(an){try{stream.getTracks().forEach(t=>t.stop());}catch(e){}return;}  // already running
+ try{ms=stream;
   ac=new(window.AudioContext||window.webkitAudioContext)();
   const s=ac.createMediaStreamSource(ms);an=ac.createAnalyser();an.fftSize=512;an.smoothingTimeConstant=.75;
   s.connect(an);da=new Uint8Array(an.frequencyBinCount);anim();}catch(e){}}
