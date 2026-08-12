@@ -1051,12 +1051,15 @@ function initVoice(){
  // Pause the loop if the tab is hidden — never leave the mic open in the background.
  document.addEventListener("visibilitychange",()=>{if(document.hidden&&M2Voice.running())M2Voice.stop();});
 }
+// A support/unsupported notice must appear ONCE, not on every tap.
+let VOICE_NOTICE={};
+function voiceNotice(key){if(VOICE_NOTICE[key])return;VOICE_NOTICE[key]=true;sysMsg(t(key));}
 // Mic button (inline onclick=toggleMic): checks support, then toggles the loop.
 function toggleMic(){
- if(!window.M2Voice)return sysMsg(t("micNo"));
+ if(!window.M2Voice)return voiceNotice("micNo");
  const s=M2Voice.supported();
- if(!s.secure)return sysMsg(t("micInsecure"));
- if(!s.recognition)return sysMsg(t("micNo"));
+ if(!s.secure)return voiceNotice("micInsecure");
+ if(!s.recognition)return voiceNotice("micNo");
  M2Voice.toggle();
 }
 function onVoiceState(state){

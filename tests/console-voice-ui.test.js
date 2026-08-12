@@ -73,6 +73,15 @@ test('insecure context / no recognition → visible message, no toggle', async (
   assert.ok(!V.calls.includes('toggle'), 'never toggled while unsupported');
 });
 
+test('the unsupported notice appears ONCE, not on every tap', async () => {
+  const { win, V } = await loadConsole();
+  V.setSupported({ recognition: false, synthesis: true, secure: true });
+  win.toggleMic(); win.toggleMic(); win.toggleMic();   // spammy taps
+  const feed = win.document.getElementById('feed').textContent;
+  const count = (feed.match(/isn.?t supported|غير مدعوم/g) || []).length;
+  assert.equal(count, 1, 'shown once despite repeated taps');
+});
+
 test('state drives the UI: listening overlay, thinking/speaking pill, idle hides', async () => {
   const { win, V } = await loadConsole();
   const onState = V.cfg().onState; assert.equal(typeof onState, 'function');

@@ -5,7 +5,9 @@
     { "source": "/dashboard", "destination": "/app/dashboard.html" },
     { "source": "/apply/:slug", "destination": "/app/apply.html" },
     { "source": "/firebase-config.js", "destination": "/app/firebase-config.js" },
-    { "source": "/fx.js", "destination": "/app/fx.js" }
+    { "source": "/fx.js", "destination": "/app/fx.js" },
+    { "source": "/speech.js", "destination": "/app/speech.js" },
+    { "source": "/voice.js", "destination": "/app/voice.js" }
   ],
   "headers": [
     {
