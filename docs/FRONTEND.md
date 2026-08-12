@@ -29,14 +29,45 @@
 - Theme + language persist in `localStorage` (`m2.theme`, `m2.lang`) across both pages.
 - **Pay-gate is open:** new accounts are `active:true` on signup (no payment); the 402 UI states exist and are E2E-verified for when Stripe re-gates. See [SECURITY.md](SECURITY.md) / [GOAL.md](GOAL.md).
 
-## Voice (in + out)
+## Voice — the state machine (in + out)
 
-**In** — Web Speech API (`SpeechRecognition`), `ar-AE` when the UI language is Arabic, `en-US` otherwise. Transcript fills the box and auto-sends. Needs Chrome/Edge/Safari and HTTPS (or localhost); the mic control degrades gracefully elsewhere.
+Voice is the product's core promise ("talk to your server"), so it is built as **one explicit state machine** in `app/voice.js` (`window.M2Voice`) that owns recognition + the conversation loop and drives synthesis through the `app/speech.js` driver (`window.M2Speech`). The console only *wires* the machine to the UI (`onState`/`onEvent`/`onError`) and provides the "thinking" step (`handle` → `/api/command` → the speakable reply).
 
-**Out (TTS)** — `app/speech.js` exposes a tiny engine `window.M2Speech` built on the browser's `speechSynthesis` (no API cost, offline, no dependency). It is deliberately behind an interface so a **premium voice provider could be swapped in later without touching the console**. It auto-speaks only when the reply came from a *voice* input (typed input never auto-speaks), picks a voice matching the **reply** language (ar-*/en-*, degrading silently if none is installed, handling async `voiceschanged`), strips markdown + caps utterance length, and never overlaps — every `speak()` cancels the one in progress. A **Settings** toggle governs it: *Voice replies — off / when I speak / on* (default: when I speak), persisted in `localStorage` (`m2.voice`). Each assistant message also carries a small speaker button for on-demand playback.
+**States & transitions:**
 
-**Continuous conversation** — when an exchange starts by voice, the console runs it hands-free: **listen → think → speak → listen**, automatically, until the user stops it. Safety caps keep the mic from ever staying open: a turn cap, a silent turn, any recognition/network error, or the visible **Stop** each end the loop; a *typed* message never starts it. The speaking state shows as a gently-pulsing orb pill with Stop (distinct from the listening overlay). Speech is cancelled on a new message, a new recording, a mode switch, or navigation away.
+```
+idle ──start()──▶ listening ──final result──▶ transcribing ──▶ thinking ──reply──▶ speaking ──done──▶ (listening | idle)
+  ▲                  │ silence/no-speech/error          │ error/timeout        │ turn-cap/stopped
+  └───────────────── stop() / silence / error / turn-cap ◀──────────────────────┘
+```
+
+**Every state has a timeout that lands somewhere safe** (defaults): listening 9s (→ silence → idle), transcribing 4s (→ thinking), thinking 15s (→ visible "took too long" → idle), speaking 23s machine backstop (→ continue). The reply language for both recognition (`ar-AE`/`en-US`) and the spoken voice follows the message, not the UI toggle.
+
+**Guarantees the machine enforces** (learned from real-browser behaviour, not the mock):
+- Branches on whether a **final result** arrived — `recognition.onend` fires for success, silence, *and* errors, so onend alone is never trusted.
+- **`speechSynthesis.onend` is unreliable** (long text / cancel races / no audio device) — the speech driver arms a length-based **watchdog** so `onDone` always fires; the loop can never hang in "speaking". *(Verified: in headless Edge, real synthesis completed via the watchdog at ~3.2s because onend never fired.)*
+- **Never double-starts recognition** — `recognition.start()` throws `InvalidStateError` if already running; every start is guarded and wrapped with abort-then-retry, and the intentional abort's `onend` is suppressed so it isn't misread as silence.
+- **Never listens while speaking** — after speech, `cancelAndWait()` polls `speechSynthesis.speaking` (it's async) and a settle delay elapses before the mic reopens, so the assistant never hears itself.
+- **Keepalive** `pause()`/`resume()` every 10s defeats Chrome's ~15s auto-pause; utterances are capped regardless.
+- **Idempotent `stop()`** from any state: abort recognition, cancel synthesis, clear timers, land in idle; calling it twice is harmless.
+- **Barge-in:** while speaking, an echo-cancelled mic analyser watches for the user talking over the assistant → cut speech, listen. Best-effort (a headset is ideal; open speakers may not fully suppress the assistant).
+
+**TTS driver** (`M2Speech`) stays behind a tiny interface so a **premium voice provider can swap in later** without touching the console. It picks a voice matching the reply language (degrading silently if none — with a one-time "no Arabic voice" notice), strips markdown, caps length, and never overlaps. A **Settings** toggle governs auto-speak: *Voice replies — off / when I speak / on* (default: when I speak, `localStorage m2.voice`). Each assistant message has a speaker button for on-demand playback.
+
+**Instrumentation:** a **Voice debug** setting (off by default, `m2.vdebug`) shows a live panel — state, last event, elapsed, recognition language, voices loaded, support flags, last error — and logs every Web Speech event to the console. Every recognition/synthesis error is shown in chat with its code (`not-allowed`, `no-speech`, `network`, `audio-capture`, `service-not-allowed`, `aborted`).
+
+**Real-browser support matrix** (observed):
+
+| Browser | Recognition | Synthesis | Notes |
+|---|---|---|---|
+| Chrome / Edge (desktop) | ✅ (online, Google/MS backend) | ✅ | Primary target. `onend` for synthesis is flaky → watchdog covers it. Verified end-to-end in Edge via `npm run voice:browser`. |
+| Safari (macOS) | ✅ (limited) | ✅ | Works; voice list differs. |
+| Firefox | ❌ (`SpeechRecognition` absent) | ✅ | Mic tap shows "voice isn't supported"; **text stays fully functional**; TTS still works. |
+| iOS Safari | ⚠️ limited/absent | ✅ (needs a user gesture) | The mic tap is the gesture. Recognition support is inconsistent; degrade to text, spoken replies still play. |
+| Insecure origin (http) | ❌ | ❌ | Speech APIs require HTTPS/localhost — the mic tap says so plainly instead of failing. |
+
+**Verification:** `npm run voice:browser` serves the shipped `app/` and drives it in real Edge (CDP + fake-media flags) through a full loop; `tests/voice-machine.test.js` (state machine), `tests/speech.test.js` (driver guarantees), and `tests/console-voice-ui.test.js` (console wiring) cover the logic deterministically.
 
 ## Leftovers
 
-`app/app.js`, `app/style.css`, `app/voice.js` are orphaned files from the pre-M2 UI — nothing references them; safe to delete whenever.
+`app/app.js`, `app/style.css` are orphaned files from the pre-M2 UI — nothing references them; safe to delete whenever. (`app/voice.js` is **not** a leftover — it is the voice state machine.)

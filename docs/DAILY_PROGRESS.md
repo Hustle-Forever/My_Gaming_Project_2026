@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-08-12 — TASK_M2_VOICE_FIX (make the voice loop actually work in a real browser)
+
+Voice — the core "talk to your server" feature — was **stuck** in a real browser: tap the mic and the conversation never completes. The jsdom tests passed, so this was a mock/reality gap. Rebuilt the whole thing against how the Web Speech API *actually* behaves and verified it in real Edge. Suite 226→242.
+
+- **Root cause.** The loop relied on `speechSynthesis` firing an utterance's `onend` to relisten, but in real Chromium `onend` frequently **never fires** (long text / cancel races / no audio device) and there was **no watchdog** — so the machine stuck in "speaking" forever and the mic never reopened. Two secondary hangs: `recognition.start()` swallowed `InvalidStateError` while the UI already showed "listening" (recognition wasn't actually running), and **no state had a timeout**.
+- **M1 — instrument** (this batch): a **Voice debug** setting (off by default) with a live panel (state, last event, elapsed, rec language, voices loaded, support flags, last error) + gated console logging of every Web Speech event; every recognition/synthesis error now shows in chat with its code — never a silent hang.
+- **M2 — one explicit state machine** (`app/voice.js`, `window.M2Voice`): `idle→listening→transcribing→thinking→speaking→(listening|idle)`, **every state timed out to a safe landing**. Branches on whether a *final result* arrived (not `onend`); guards every `start()` with abort-then-retry (suppressing the abort's `onend`); never listens while speaking (`cancelAndWait` + settle); idempotent `stop()`. `app/speech.js` is now a driver that **guarantees `onDone`** (onend | error | **watchdog**), with keepalive + async `cancelAndWait` + `ensureVoices`. `app/index.html` rewired to drive the machine with distinct listening/thinking/speaking visuals. Tests: 16 machine + 10 driver + 10 console glue.
+- **M3 — real-browser verification** (`scripts/browser-voice-check.js`, `npm run voice:browser`): drives the SHIPPED page in real Edge over CDP with fake-media flags. Observed for real: synthesis completing via **watchdog at ~3.2s** (onend never fired — the root cause, now survived), the full loop `listening→transcribing→thinking→speaking→listening`, barge-in returning to listening, and stop from listening/mid-turn + double-stop all → idle. STT audio→text has no backend in headless automation, so a final transcript is injected through the real result path (disclosed).
+- **M4 — real-world failures:** insecure-context + unsupported-browser messages on mic tap (text stays fully working); one-time "no Arabic voice" notice (degrades, never throws); hidden tab stops the loop; network/timeout errors surface visibly and land safe. Browser-support matrix documented in FRONTEND.md.
+- **M5 — feel:** thinking is now visually distinct from speaking (slower, dimmer pulse); echo-cancelled audio **barge-in**; a "still working…" latency hint after ~2.2s; Stop is present and works in every active state.
+- **Decisions on the human's behalf:** kept the machine framework-free and injectable (fake clock/recognition/synth) so every transition + timeout is deterministic in tests *and* verifiable in a real browser; barge-in is best-effort (documented — headset ideal, open speakers may false-trigger); STT-in-automation gap disclosed rather than papered over with a mock.
+- **Unverifiable without a human:** a live microphone permission **denial** (fake-media auto-grants it in automation — the not-allowed→visible-error mapping is unit-tested; a person must click "Block" on the mic prompt to see the toast); real spoken-audio quality and installed OS voices; iOS Safari behaviour (no device available here). Exactly what to click is in the final report.
+- **npm test 242/242, smoke 15/15, `npm run voice:browser` PASS in Edge.**
+
 ## 2026-08-12 — TASK_M2_VOICE_ASK (make Ask talk, and talk well)
 
 Five milestones fixing three Ask-mode defects and adding spoken, hands-free conversation. TDD throughout; suite 185→226.

@@ -2,14 +2,14 @@
 
 **Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-12
 
-> One command — `npm test` — boots the Firebase emulators and runs **226 tests**: 48 platform, 40 Server Scanner, 51 Whitelist Officer, 46 Concierge, and 41 Voice & Ask (reply-language, the Ask persona + fallback, the TTS engine, and the hands-free conversation loop). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators and runs **242 tests**: 48 platform, 40 Server Scanner, 51 Whitelist Officer, 46 Concierge, and 57 Voice & Ask (reply-language, the Ask persona + fallback, the voice state machine, the TTS driver, and real-browser-verified behaviour). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 226 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 242 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```
@@ -59,10 +59,15 @@ tests/no-old-name.test.js        guard: the old product name appears in no git-t
 tests/lang.test.js               reply-language detector (Arabic/Latin dominance, mixed→fallback)
 tests/reply-language.test.js     endpoint: EN/AR in→out for Ask AND Run, ambiguous→default, toggle-independent
 tests/ask-persona.test.js        Ask system prompt + no-key fallback (explains, concrete, native AR, capped)
-tests/speech.test.js             TTS engine (mock speechSynthesis): source gate, voice-by-lang, cancel, cap, voiceschanged
-tests/console-speech-ui.test.js  jsdom: console TTS wiring (source routing, manual button, toggle, speaking orb)
-tests/console-conversation-ui.test.js jsdom: hands-free loop (cycle, typed-never-loops, turn cap, silence, error, Stop)
+tests/voice-machine.test.js      the voice state machine: every transition, per-state timeout, double-start,
+                                 InvalidStateError retry, result-vs-end, stop-from-each-state, barge-in, errors
+tests/speech.test.js             TTS driver: onDone ALWAYS fires (end/error/WATCHDOG), cancel suppresses it,
+                                 cancelAndWait, async voiceschanged, voice-by-lang, cap, source gate
+tests/console-voice-ui.test.js   jsdom: console↔machine wiring (mic tap, state→UI, visible errors, debug panel,
+                                 typed send, thinking-vs-speaking, hidden-tab stop, no-Arabic-voice notice)
 ```
+
+**Real-browser verification** (the mock/reality gap that caused the original hang): `npm run voice:browser` serves the shipped `app/` and drives it in **real Edge (Chromium)** over CDP with fake-media flags through a full loop — observing `listening→transcribing→thinking→speaking→listening`, synthesis completing via the **watchdog** (real onend didn't fire), barge-in, and stop-from-each-state. STT audio→text has no backend in headless automation, so a final transcript is injected through the real result path; disclosed in [FRONTEND.md](FRONTEND.md).
 
 ## What each area proves
 

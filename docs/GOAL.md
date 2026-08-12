@@ -21,7 +21,7 @@
 
 ## Status (2026-08-12)
 
-- ✅ Platform hardened and proven: **`npm test` 226/226** (auth + mandatory email verification, pay-gate cycle, key custody, interpretation incl. rogue-provider whitelist proof, queue, envelope, rate limiting, **the read-only Server Scanner, the Whitelist Officer, + the notify-only Concierge**) + `npm run smoke:emulator` 15/15.
+- ✅ Platform hardened and proven: **`npm test` 242/242** (auth + mandatory email verification, pay-gate cycle, key custody, interpretation incl. rogue-provider whitelist proof, queue, envelope, rate limiting, **the read-only Server Scanner, the Whitelist Officer, + the notify-only Concierge**) + `npm run smoke:emulator` 15/15.
 - ✅ **Server Scanner** shipped (read-only) — M2 reads a customer's FiveM server and reports its identity, resources, and ranked problems in plain EN/AR. The shared foundation for the Doctor and the AI Installer. See [SCANNER.md](SCANNER.md).
 - ✅ **Whitelist Officer** shipped — the whitelist form replaced by an AI interview (EN/AR): follows up on vague answers, scores against owner criteria with quoted evidence, flags copy-paste/hostile/AI answers, one-click owner decisions, Discord delivery. Public `/apply/{slug}` + dashboard review queue. Human decides by default. See [WHITELIST.md](WHITELIST.md).
 - ✅ One coherent product surface: marketing site + console (`/`) and the owner dashboard (`/dashboard`, now with the Server Report) share one design system; email verification + password reset; session persistence; translated failure states everywhere.
