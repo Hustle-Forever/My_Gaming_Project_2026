@@ -197,6 +197,31 @@ html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right
 .wl-stat .n{font-family:var(--display);font-size:20px;font-weight:700}
 .wl-stat .l{font-size:9.5px;color:var(--faint);margin-top:1px;text-transform:uppercase;letter-spacing:.4px}
 @media(max-width:420px){.wl-stats{grid-template-columns:1fr 1fr}}
+/* concierge */
+.cg-safe{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--faint);background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:9px 12px;margin:12px 0}
+.cg-safe svg{width:15px;height:15px;flex:0 0 auto;color:var(--lime)}
+.cg-seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.cg-seg button{border:0;background:transparent;color:var(--dim);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer}
+.cg-seg button.on{background:var(--surface-3);color:var(--text)}
+.cg-h{font-size:12px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 9px}
+.cg-funnel{display:flex;flex-direction:column;gap:7px}
+.cg-fr{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:9px;font-size:12px}
+.cg-fr .lbl{color:var(--dim)}
+.cg-fr .track{height:9px;background:var(--bg);border-radius:6px;overflow:hidden}
+.cg-fr .fill{height:100%;background:linear-gradient(90deg,var(--lime),var(--violet));border-radius:6px;min-width:2px;transition:width .5s}
+.cg-fr .val{text-align:right;font-family:var(--display);font-weight:700;font-size:13px}
+.cg-ret{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cg-trend{display:flex;align-items:flex-end;gap:5px;height:64px;padding-top:6px}
+.cg-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.cg-bar .col{width:100%;max-width:26px;background:linear-gradient(180deg,var(--violet),var(--lime));border-radius:5px 5px 0 0;min-height:3px}
+.cg-bar .d{font-size:8.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cg-themes{display:flex;flex-direction:column;gap:6px}
+.cg-th{display:grid;grid-template-columns:96px 1fr 26px;align-items:center;gap:9px;font-size:12.5px}
+.cg-th .thl{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-th .track{height:8px;background:var(--bg);border-radius:5px;overflow:hidden}
+.cg-th .fill{height:100%;background:var(--violet);border-radius:5px;min-width:2px}
+.cg-th .tv{text-align:right;color:var(--dim);font-weight:600}
+.cg-empty{text-align:center;color:var(--faint);font-size:12.5px;padding:22px 10px;background:var(--bg);border:1px dashed var(--line);border-radius:12px}
 .wl-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
 .wl-row:hover{border-color:var(--line-2)}
 .wl-badge{width:38px;height:38px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:14px}
@@ -485,6 +510,33 @@ html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right
       <div id="wlDetail" class="wl-detail hide"></div>
     </div>
 
+    <!-- 3.7 · the concierge -->
+    <div class="card" id="concierge">
+      <h2><span class="ci l"><svg viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 20a7 7 0 0114 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i="cgTitle">The Concierge</span></h2>
+      <p class="sub" data-i="cgSub">An in-game guide that greets every new player, asks what they want to be, drops a waypoint, and checks back in — in Arabic or English. It only ever sends a message, opens a menu, or sets a waypoint.</p>
+
+      <div class="cg-safe"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span data-i="cgSafe">Notify-only — it never spawns, teleports, gives items, or changes anything in your world.</span></div>
+
+      <!-- setup -->
+      <div class="rw"><div><div class="lb" data-i="cgEnable">Enable the Concierge</div><div class="sb" data-i="cgEnableSub">Greet new players the moment they join</div></div>
+        <div class="seg"><button id="cgOn" onclick="cgSetEnabled(true)" data-i="on2">On</button><button id="cgOff" class="on" onclick="cgSetEnabled(false)" data-i="off2">Off</button></div></div>
+
+      <div class="wl-block"><div class="wl-h" data-i="cgTone">Tone</div>
+        <div class="cg-seg" id="cgTone">
+          <button data-tone="serious" onclick="cgSetTone('serious')" data-i="cgToneSerious">Serious</button>
+          <button data-tone="casual" onclick="cgSetTone('casual')" data-i="cgToneCasual">Casual</button>
+          <button data-tone="neutral" class="on" onclick="cgSetTone('neutral')" data-i="cgToneNeutral">Neutral</button>
+        </div>
+      </div>
+      <div class="wl-block"><div class="wl-h" data-i="cgCheckin">Check-in delay</div><div class="wl-hint" data-i="cgCheckinSub">How long after arrival to check back in</div>
+        <div class="inrow"><input id="cgCheckin" type="range" min="60" max="1800" step="30" value="300" oninput="cgCheckinLabel()" onchange="cgSave()" style="flex:1"><span id="cgCheckinVal" style="font-family:var(--display);font-weight:700;min-width:52px;text-align:right">5m 0s</span></div>
+      </div>
+      <div class="okline" id="cgSetupMsg"></div>
+
+      <!-- analytics -->
+      <div id="cgStats"></div>
+    </div>
+
     <!-- 4 · plan -->
     <div class="card" id="plan">
       <h2><span class="ci p"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4-3 7-7 10-4-3-7-6-7-10V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span data-i="plTitle">Plan</span></h2>
@@ -610,7 +662,18 @@ const I18N={
   wlBack:"← Back to queue",wlTranscript:"Transcript",wlScoring:"Scoring",wlFlags:"Flags",wlSummary:"Summary",wlRecommend:"AI recommends",
   wlApprove:"Approve",wlReject:"Reject",wlReinterview:"Re-interview",wlDelete:"Delete application",
   wlSaved:"Saved ✓",wlSaveErr:"Couldn’t save.",wlWebhookOk:"Sent ✓ — check your Discord channel.",wlWebhookBad:"Delivery failed — check the URL.",
-  wlDecided:"Decision saved ✓",wlNoteph:"Optional note…",wlCopied:"Copied ✓",wlNever:"never",wlMin:"m",wlEvidenceLbl:"Evidence"},
+  wlDecided:"Decision saved ✓",wlNoteph:"Optional note…",wlCopied:"Copied ✓",wlNever:"never",wlMin:"m",wlEvidenceLbl:"Evidence",
+  cgTitle:"The Concierge",cgSub:"An in-game guide that greets every new player, asks what they want to be, drops a waypoint, and checks back in — in Arabic or English. It only ever sends a message, opens a menu, or sets a waypoint.",
+  cgEnable:"Enable the Concierge",cgEnableSub:"Greet new players the moment they join",
+  cgTone:"Tone",cgToneSerious:"Serious",cgToneCasual:"Casual",cgToneNeutral:"Neutral",
+  cgCheckin:"Check-in delay",cgCheckinSub:"How long after arrival to check back in",
+  cgSec:"s",cgSafe:"Notify-only — it never spawns, teleports, gives items, or changes anything in your world.",
+  cgArrived:"Arrived",cgGreeted:"Greeted",cgAnswered:"Answered",cgReached:"Reached",cgCheckedIn:"Checked in",
+  cgFunnel:"Onboarding funnel",cgRetention:"Retention",cgRetTrend:"Arrivals over time",cgThemes:"What players ask about",
+  cgStayed:"Stayed 10+ min",cgReturned:"Came back",cgRetRate:"Retention",
+  cgEmpty:"No arrivals yet. Once your server is live and the Concierge is on, new players show up here.",
+  cgOf:"of arrivals",cgNoThemes:"No questions asked yet.",cgSaved:"Saved ✓",cgSaveErr:"Couldn’t save.",
+  thMoney:"Money & jobs",thCommunication:"Voice & chat",thFood:"Food & needs",thGetting_started:"Getting started",thVehicles:"Vehicles",thOther:"Other"},
  ar:{dashTitle:"لوحة التحكم",active:"مفعّل",inactive:"موقوف",
   authTitleUp:"أنشئ حسابك",authSubUp:"ابدأ مجانًا. بدون بطاقة.",
   authTitleIn:"أهلًا من جديد",authSubIn:"سجّل الدخول لإدارة سيرفرك.",
@@ -667,7 +730,18 @@ const I18N={
   wlBack:"← رجوع للقائمة",wlTranscript:"النص",wlScoring:"التقييم",wlFlags:"تنبيهات",wlSummary:"الخلاصة",wlRecommend:"توصية الذكاء",
   wlApprove:"قبول",wlReject:"رفض",wlReinterview:"إعادة مقابلة",wlDelete:"حذف الطلب",
   wlSaved:"تم الحفظ ✓",wlSaveErr:"تعذّر الحفظ.",wlWebhookOk:"أُرسل ✓ — تحقق من قناتك.",wlWebhookBad:"فشل الإرسال — تحقق من الرابط.",
-  wlDecided:"تم حفظ القرار ✓",wlNoteph:"ملاحظة اختيارية…",wlCopied:"تم النسخ ✓",wlNever:"لا يوجد",wlMin:"د",wlEvidenceLbl:"الدليل"}};
+  wlDecided:"تم حفظ القرار ✓",wlNoteph:"ملاحظة اختيارية…",wlCopied:"تم النسخ ✓",wlNever:"لا يوجد",wlMin:"د",wlEvidenceLbl:"الدليل",
+  cgTitle:"المُضيف",cgSub:"مُرشد داخل اللعبة يرحّب بكل لاعب جديد، يسأله عمّا يريد أن يكون، يضع له علامة على الخريطة، ثم يطمئن عليه — بالعربية أو الإنجليزية. لا يفعل سوى إرسال رسالة أو فتح قائمة أو وضع علامة.",
+  cgEnable:"تفعيل المُضيف",cgEnableSub:"رحّب باللاعبين الجدد لحظة انضمامهم",
+  cgTone:"الأسلوب",cgToneSerious:"جاد",cgToneCasual:"ودّي",cgToneNeutral:"محايد",
+  cgCheckin:"مهلة الاطمئنان",cgCheckinSub:"كم من الوقت بعد الوصول نعود للاطمئنان",
+  cgSec:"ث",cgSafe:"إشعار فقط — لا يستدعي ولا ينقل ولا يعطي أغراضًا ولا يغيّر أي شيء في عالمك.",
+  cgArrived:"وصل",cgGreeted:"رُحّب به",cgAnswered:"أجاب",cgReached:"وصل للوجهة",cgCheckedIn:"تم الاطمئنان",
+  cgFunnel:"مسار الترحيب",cgRetention:"البقاء",cgRetTrend:"الوافدون عبر الزمن",cgThemes:"عمّا يسأل اللاعبون",
+  cgStayed:"بقي +10 دقائق",cgReturned:"عاد",cgRetRate:"نسبة البقاء",
+  cgEmpty:"لا وافدين بعد. حين يعمل سيرفرك ويكون المُضيف مفعّلًا، يظهر اللاعبون الجدد هنا.",
+  cgOf:"من الوافدين",cgNoThemes:"لا أسئلة بعد.",cgSaved:"تم الحفظ ✓",cgSaveErr:"تعذّر الحفظ.",
+  thMoney:"المال والوظائف",thCommunication:"الصوت والدردشة",thFood:"الطعام والاحتياجات",thGetting_started:"البداية",thVehicles:"المركبات",thOther:"أخرى"}};
 
 const $=i=>document.getElementById(i), t=k=>I18N[LANG][k];
 const SUN='<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
@@ -680,7 +754,7 @@ function setLang(l){LANG=l;localStorage.setItem("m2.lang",l);
  $("lEn").classList.toggle("on",l==="en");$("lAr").classList.toggle("on",l==="ar");
  document.querySelectorAll("[data-i]").forEach(e=>{const v=t(e.dataset.i);if(v!==undefined)e.textContent=v;});
  document.querySelectorAll("[data-ip]").forEach(e=>{const v=t(e.dataset.ip);if(v)e.placeholder=v;});
- setAuthTab(AUTHTAB);render();if(RP_LAST)rpRender(RP_LAST);}
+ setAuthTab(AUTHTAB);render();if(RP_LAST)rpRender(RP_LAST);if(CGCFG)cgRenderSetup();if(CGSTATS)cgRenderStats();}
 
 /* ---- auth ---- */
 function setAuthTab(tab){AUTHTAB=tab;
@@ -784,7 +858,7 @@ async function enter(){
   if(!ok)return;
   $("netbar").classList.remove("show");
   $("auth").classList.remove("show");$("boot").classList.add("hide");
-  $("dash").classList.remove("hide");render();startRefresh();rpLoadHistory();wlLoad();
+  $("dash").classList.remove("hide");render();startRefresh();rpLoadHistory();wlLoad();cgLoad();
  }catch(e){
   $("boot").classList.add("hide");
   $("auth").classList.remove("show");$("dash").classList.remove("hide");
@@ -1013,6 +1087,7 @@ function rpExport(){
 
 /* ===== Whitelist Officer ===== */
 let WLCFG=null, WLVIEW="queue", WLAPP=null;
+let CGCFG=null, CGSTATS=null;
 function wlTab(v){WLVIEW=v;$("wlTabQueue").classList.toggle("on",v==="queue");$("wlTabSetup").classList.toggle("on",v==="setup");
  $("wlQueueView").classList.toggle("hide",v!=="queue");$("wlSetupView").classList.toggle("hide",v!=="setup");
  $("wlDetail").classList.add("hide");
@@ -1103,6 +1178,57 @@ async function wlTestWebhook(){
   if(r.ok&&d.delivered){flash($("wlWebhookMsg"),"wlWebhookOk");wlSave();}else flash($("wlWebhookMsg"),"wlWebhookBad",true);}catch(e){flash($("wlWebhookMsg"),"wlWebhookBad",true);}
 }
 function wlCopyLink(btn){copyText(location.origin+"/apply/"+WLCFG.slug,btn);flash($("wlSetupMsg"),"wlCopied");}
+
+/* ===== The Concierge ===== */
+async function cgLoad(){
+ try{const r=await authedFetch("/api/concierge/config");if(r.status===401)return sessionExpired();if(r.status===403)return;
+  const d=await r.json().catch(()=>({}));if(r.ok&&d.config){CGCFG=d.config;cgRenderSetup();cgLoadStats();}}catch(e){}
+}
+async function cgLoadStats(){
+ try{const r=await authedFetch("/api/concierge/stats");const d=await r.json().catch(()=>({}));if(!r.ok)return;
+  CGSTATS=d.stats;cgRenderStats();}catch(e){}
+}
+function cgRenderSetup(){
+ if(!CGCFG)return;
+ $("cgOn").classList.toggle("on",!!CGCFG.enabled);$("cgOff").classList.toggle("on",!CGCFG.enabled);
+ const tone=CGCFG.tone||"neutral";
+ document.querySelectorAll("#cgTone button").forEach(b=>b.classList.toggle("on",b.dataset.tone===tone));
+ $("cgCheckin").value=CGCFG.checkinSeconds||300;cgCheckinLabel();
+}
+function cgCheckinLabel(){const s=+$("cgCheckin").value;$("cgCheckinVal").textContent=Math.floor(s/60)+"m "+(s%60)+"s";}
+function cgSetTone(tone){if(!CGCFG)return;CGCFG.tone=tone;cgRenderSetup();cgSave();}
+async function cgSetEnabled(on){if(!CGCFG)return;CGCFG.enabled=on;cgRenderSetup();await cgSave();}
+async function cgSave(){
+ if(!CGCFG)return;
+ const patch={enabled:CGCFG.enabled,tone:CGCFG.tone,checkinSeconds:+$("cgCheckin").value};
+ try{const r=await authedFetch("/api/concierge/config",{method:"POST",body:JSON.stringify(patch)});
+  if(r.status===401)return sessionExpired();const d=await r.json().catch(()=>({}));
+  if(r.ok&&d.config){CGCFG=d.config;flash($("cgSetupMsg"),"cgSaved");}else flash($("cgSetupMsg"),"cgSaveErr",true);}catch(e){}
+}
+function cgPct(x){return Math.round((x||0)*100);}
+function cgThemeLabel(th){const k="th"+th.charAt(0).toUpperCase()+th.slice(1);const v=t(k);return v!==undefined?v:th;}
+function cgRenderStats(){
+ const el=$("cgStats");if(!el)return;const s=CGSTATS;
+ if(!s||!s.totals||!s.totals.events){el.innerHTML=`<div class="cg-empty">${t("cgEmpty")}</div>`;return;}
+ const f=s.funnel,arr=f.arrived||0;
+ const rows=[["cgArrived",f.arrived],["cgGreeted",f.greeted],["cgAnswered",f.answered],["cgReached",f.reached],["cgCheckedIn",f.checkin]];
+ const funnel=rows.map(([k,n])=>{const pct=arr?Math.round(n/arr*100):0;
+  return `<div class="cg-fr"><span class="lbl">${t(k)}</span><span class="track"><span class="fill" style="width:${pct}%"></span></span><span class="val">${n}</span></div>`;}).join("");
+ const ret=`<div class="cg-ret">
+  <div class="wl-stat"><div class="n">${s.retention.stillPlaying}</div><div class="l">${t("cgStayed")}</div></div>
+  <div class="wl-stat"><div class="n">${s.retention.returned}</div><div class="l">${t("cgReturned")}</div></div>
+  <div class="wl-stat"><div class="n">${cgPct(s.retention.rate)}%</div><div class="l">${t("cgRetRate")}</div></div></div>`;
+ const days=s.arrivalsByDay||[];const maxD=Math.max(1,...days.map(d=>d.arrived));
+ const trend=days.length?`<div class="cg-trend">${days.map(d=>{const h=Math.round(d.arrived/maxD*52)+3;
+  const lbl=new Date(d.day+"T00:00:00Z").toLocaleDateString(LANG==="ar"?"ar":"en",{month:"short",day:"numeric",timeZone:"UTC"});
+  return `<div class="cg-bar" title="${esc(d.day)}: ${d.arrived}"><div class="col" style="height:${h}px"></div><span class="d">${esc(lbl)}</span></div>`;}).join("")}</div>`:"";
+ const themes=s.themes||[];const maxT=Math.max(1,...themes.map(x=>x.count));
+ const themesHtml=themes.length?`<div class="cg-themes">${themes.map(x=>`<div class="cg-th"><span class="thl">${esc(cgThemeLabel(x.theme))}</span><span class="track"><span class="fill" style="width:${Math.round(x.count/maxT*100)}%"></span></span><span class="tv">${x.count}</span></div>`).join("")}</div>`:`<div class="cg-empty">${t("cgNoThemes")}</div>`;
+ el.innerHTML=`<div class="cg-h">${t("cgFunnel")}</div><div class="cg-funnel">${funnel}</div>
+  <div class="cg-h">${t("cgRetention")}</div>${ret}
+  ${days.length?`<div class="cg-h">${t("cgRetTrend")}</div>${trend}`:""}
+  <div class="cg-h">${t("cgThemes")}</div>${themesHtml}`;
+}
 
 /* ---- boot ---- */
 document.addEventListener("mirsal-auth-ready",async(e)=>{

@@ -103,6 +103,18 @@ test('bridge auth + gate: wrong token 401, disabled concierge ignored, inactive 
   assert.equal((await bridge(t.bridgeToken, { type: 'join', playerId: 'z' })).status, 402);
 });
 
+test('owner stats endpoint aggregates the funnel from real events', async () => {
+  const t = await enabledTenant();
+  await bridge(t.bridgeToken, { type: 'join', playerId: 'steam:7', language: 'en' });
+  await bridge(t.bridgeToken, { type: 'choice', playerId: 'steam:7', jobId: 'police' });
+  const r = await api(t.idToken)('/api/concierge/stats');
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.stats.funnel.arrived, 1, 'one arrival counted');
+  assert.equal(r.body.stats.funnel.greeted, 1, 'one greet counted');
+  assert.ok(r.body.stats.funnel.reached >= 1, 'reached the waypoint');
+  assert.equal(r.body.stats.totals.players, 1);
+});
+
 test('BRIDGE LUA is read/notify-only: no write/spawn/teleport/give primitives', () => {
   const file = path.join(__dirname, '..', 'fivem-bridge', 'concierge.lua');
   assert.ok(fs.existsSync(file), 'concierge.lua exists');
