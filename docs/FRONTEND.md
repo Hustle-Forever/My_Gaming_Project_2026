@@ -20,7 +20,7 @@
 
 ## Wiring (both pages)
 
-- A `<script type="module">` initializes Firebase Auth from `window.FIREBASE_CONFIG`, exposes `window.__mirsalFirebase = { signIn, getToken(force), signOut }`, and fires **`mirsal-auth-ready`** after the first `onAuthStateChanged` — that's the session-persistence handshake the classic script boots on. `useEmulator: true` connects to the Auth emulator (127.0.0.1:9099).
+- A `<script type="module">` initializes Firebase Auth from `window.FIREBASE_CONFIG`, exposes `window.__m2Firebase = { signIn, getToken(force), signOut }`, and fires **`m2-auth-ready`** after the first `onAuthStateChanged` — that's the session-persistence handshake the classic script boots on. `useEmulator: true` connects to the Auth emulator (127.0.0.1:9099).
 - **Auth flow:** sign-up → `POST /api/signup` (creates the Firebase user + tenant, `active:true`) → Firebase `signIn` → `GET /api/tenant/me`. Sign-in → Firebase `signIn` → `/api/tenant/me`.
 - **`authedFetch`** (both pages): fresh ID token per call; on 401 it retries once with a force-refreshed token, then signs out with a translated "session expired".
 - Console: `POST /api/command` renders `{action, message, queued}` (Run) or `{reply}` (Ask); envelope codes drive the chips — 402 locked + "View plan →" (`/dashboard#plan`), 429 "wait a minute", BAD_INPUT vs INTERNAL split; network failure → Offline pill + retry copy. Setup notices (no key / server never polled) link to the dashboard and are dismissible.
@@ -35,4 +35,4 @@ Web Speech API (`SpeechRecognition`), `ar-AE` when the UI language is Arabic, `e
 
 ## Leftovers
 
-`app/app.js`, `app/style.css`, `app/voice.js` are orphaned files from the pre-Mirsal مرسال UI — nothing references them; safe to delete whenever.
+`app/app.js`, `app/style.css`, `app/voice.js` are orphaned files from the pre-M2 UI — nothing references them; safe to delete whenever.

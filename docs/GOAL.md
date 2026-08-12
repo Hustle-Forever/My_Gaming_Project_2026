@@ -2,7 +2,7 @@
 
 **Area:** Product vision & status · **Last updated:** 2026-08-10
 
-> Mirsal is a hosted, multi-tenant platform that lets FiveM roleplay server owners control their game world by voice or text, in Arabic or English. Customers bring their own server and their own AI key; we provide the console, the understanding, and the delivery pipe. `active` is the single pay-gate.
+> M2 is a hosted, multi-tenant platform that lets FiveM roleplay server owners control their game world by voice or text, in Arabic or English. Customers bring their own server and their own AI key; we provide the console, the understanding, and the delivery pipe. `active` is the single pay-gate.
 
 ---
 

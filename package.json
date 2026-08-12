@@ -1,20 +1,20 @@
 {
-  "name": "mirsal-platform",
+  "name": "m2-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "Mirsal - multi-tenant FiveM AI control platform (Firebase + Vercel + Gemini)",
+  "description": "M2 - multi-tenant FiveM AI control platform (Firebase + Vercel + Gemini)",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "check": "node scripts/check-build.js",
     "dev": "node scripts/dev-server.js",
-    "test": "firebase emulators:exec --only auth,firestore --project demo-mirsal \"node --test tests/*.test.js\"",
-    "emulators": "firebase emulators:start --only auth,firestore --project demo-mirsal",
+    "test": "firebase emulators:exec --only auth,firestore --project demo-m2 \"node --test tests/*.test.js\"",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-m2",
     "seed": "node scripts/seed.js",
-    "seed:emulator": "firebase emulators:exec --only firestore --project demo-mirsal \"node scripts/seed.js --verify\"",
+    "seed:emulator": "firebase emulators:exec --only firestore --project demo-m2 \"node scripts/seed.js --verify\"",
     "activate": "node scripts/activate.js",
-    "smoke:emulator": "firebase emulators:exec --only auth,firestore --project demo-mirsal \"node scripts/smoke-emulator.js\""
+    "smoke:emulator": "firebase emulators:exec --only auth,firestore --project demo-m2 \"node scripts/smoke-emulator.js\""
   },
   "dependencies": {
     "@google/genai": "^1.16.0",

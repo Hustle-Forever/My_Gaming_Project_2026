@@ -569,8 +569,8 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 <script src="fx.js"></script>
 <script type="module">
 /* Firebase Auth wiring — reads the public web config from firebase-config.js
-   (shared with dashboard.html). Exposes window.__mirsalFirebase for the
-   classic script below and fires "mirsal-auth-ready" once the persisted
+   (shared with dashboard.html). Exposes window.__m2Firebase for the
+   classic script below and fires "m2-auth-ready" once the persisted
    session (if any) is known, so a reload lands signed-in users straight in
    the console. Set useEmulator:true in firebase-config.js for local testing
    against the Auth emulator. */
@@ -586,11 +586,11 @@ try {
       sendEmailVerification, sendPasswordResetEmail } =
       await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
     const app = initializeApp(USE_EMU
-      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
+      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-m2" : FIREBASE_CONFIG.projectId }
       : FIREBASE_CONFIG);
     const auth = getAuth(app);
     if (USE_EMU) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-    window.__mirsalFirebase = {
+    window.__m2Firebase = {
       async signIn(email, password) { const c = await signInWithEmailAndPassword(auth, email, password); return c.user.getIdToken(); },
       // force=true mints a fresh token (the 401 retry path / post-verification)
       async getToken(force) { return auth.currentUser ? auth.currentUser.getIdToken(Boolean(force)) : null; },
@@ -606,14 +606,14 @@ try {
     onAuthStateChanged(auth, (user) => {
       if (!first) return;
       first = false;
-      document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: Boolean(user) } }));
+      document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: Boolean(user) } }));
     });
   } else {
-    document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
+    document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: false } }));
   }
 } catch (err) {
   console.warn("Firebase init failed:", err);
-  document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
+  document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: false } }));
 }
 </script>
 
@@ -721,7 +721,7 @@ function setAuthTab(tab){AUTHTAB=tab;
 /* authedFetch: every API call carries a fresh Firebase ID token; a 401 gets
    ONE forced-refresh retry, after which callers treat it as session expiry. */
 async function authedFetch(path,opts={},_retried){
- const fb=window.__mirsalFirebase;
+ const fb=window.__m2Firebase;
  const token=fb?await fb.getToken(Boolean(_retried)).catch(()=>null):null;
  const r=await fetch((CONFIG.BACKEND_URL||"")+path,{...opts,
   headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||""),...(opts.headers||{})}});
@@ -729,7 +729,7 @@ async function authedFetch(path,opts={},_retried){
  return r;
 }
 function sessionExpired(){
- if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+ if(window.__m2Firebase)window.__m2Firebase.signOut().catch(()=>{});
  SESSION=null;$("feed").innerHTML="";$("chero").classList.remove("min");
  $("console").classList.remove("show");$("site").classList.remove("hide");
  document.documentElement.dir="ltr";
@@ -738,7 +738,7 @@ function sessionExpired(){
 /* Email verification screen: server enforces the gate (403 EMAIL_UNVERIFIED);
    this UI explains it and offers resend / continue / switch account. */
 let VCOOL=0,VTIMER=null;
-function fbx(){return window.__mirsalFirebase;}
+function fbx(){return window.__m2Firebase;}
 function showVerify(email){
  $("vEmail").textContent=email||(fbx()&&fbx().email())||"";
  closeAuth();$("verify").classList.add("show");$("vMsg").textContent="";}
@@ -791,7 +791,7 @@ async function doAuth(){
  $("aErr").textContent="";
  if(!email||!pass){$("aErr").textContent="Enter your email and password.";return;}
  if(AUTHTAB==="signup"&&pass.length<8){$("aErr").textContent="Password must be at least 8 characters.";return;}
- const fb=window.__mirsalFirebase;
+ const fb=window.__m2Firebase;
  if(!fb){ // Firebase not configured on this copy of the app
   if(LOCAL_PREVIEW){SESSION={token:"preview",name:name||email.split("@")[0]||"My server",active:true,hasKey:true};enterConsole();}
   else $("aErr").textContent="Couldn’t reach the server.";
@@ -825,18 +825,18 @@ async function doAuth(){
    (code==="auth/invalid-credential"||code==="auth/wrong-password"||code==="auth/user-not-found")?"Wrong email or password.":"Something went wrong. Try again.";
  }
 }
-/* Session persistence: the Firebase module fires mirsal-auth-ready once the
+/* Session persistence: the Firebase module fires m2-auth-ready once the
    persisted session is known. Signed-in -> straight into the console. */
 let BOOTED=false;
 function bootSession(){
- document.addEventListener("mirsal-auth-ready",async(e)=>{
+ document.addEventListener("m2-auth-ready",async(e)=>{
   if(BOOTED||!e.detail.signedIn)return;
   BOOTED=true;
   if(fbx()&&!fbx().emailVerified()){showVerify();return;} // persisted but unverified session
   const state=await loadTenantIntoSession();
   if(state==="unverified"){showVerify();return;}
   if(state==="expired"||state==="error"){ // fail closed: stay on the site
-   BOOTED=false;if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});return;}
+   BOOTED=false;if(window.__m2Firebase)window.__m2Firebase.signOut().catch(()=>{});return;}
   if(state==="offline")SESSION={name:"My server",active:true,hasKey:true,offline:true};
   enterConsole();
   if(state==="offline")refreshStat("off");
@@ -855,7 +855,7 @@ function renderNotice(){
  n.innerHTML=`<div><b>${t(kind==="key"?"noKeyTitle":"noBridgeTitle")}</b><div style="margin-top:3px">${t(kind==="key"?"noKeyBody":"noBridgeBody")}</div><a href="/dashboard">${t("openDash")} →</a></div><span class="nx" onclick="dismissNotice()">✕</span>`;
 }
 function dismissNotice(){if(SESSION)SESSION.dismissed=true;renderNotice();}
-function signOut(){if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+function signOut(){if(window.__m2Firebase)window.__m2Firebase.signOut().catch(()=>{});
  SESSION=null;BOOTED=false;closeSheet();$("console").classList.remove("show");$("site").classList.remove("hide");
  document.documentElement.dir="ltr";$("feed").innerHTML="";$("chero").classList.remove("min");
  $("notice").className="hide";$("notice").innerHTML="";window.scrollTo(0,0);}

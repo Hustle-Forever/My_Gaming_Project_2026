@@ -22,7 +22,7 @@ async function loadDashboard() {
     runScripts: 'dangerously',
     url: 'http://localhost/dashboard', // gives the page an origin -> localStorage
     // no resource loading -> the firebase module import rejects inside its own
-    // try/catch and dispatches mirsal-auth-ready(signedIn:false); the classic
+    // try/catch and dispatches m2-auth-ready(signedIn:false); the classic
     // script then defines all the report functions we exercise.
     beforeParse(window) {
       window.matchMedia = () => ({ matches: false, addEventListener() {} });

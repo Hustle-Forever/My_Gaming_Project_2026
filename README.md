@@ -1,4 +1,4 @@
-# Mirsal — FiveM AI control platform
+# M2 — FiveM AI control platform
 
 **🟢 Live showcase:** _after the Vercel import, put your URL here →_ `https://YOUR-PROJECT.vercel.app/docs/` — that link will open the [M2 showcase](docs/index.html) as a real page in a new tab. Until then, GitHub shows the HTML as source code (GitHub never renders HTML files — only a hosting URL does).
 
@@ -58,12 +58,12 @@ Operator app ──(Firebase ID token)──► /api/command (Vercel fn)
 
 ## FiveM bridge install (customer side)
 
-Copy `fivem-bridge/` into the server's `resources/` as `mirsal-bridge`, then in `server.cfg`:
+Copy `fivem-bridge/` into the server's `resources/` as `m2-bridge`, then in `server.cfg`:
 
 ```cfg
 set airp_backend_url "https://your-app.vercel.app"    # no trailing slash
 set airp_bridge_token "brg_..."                        # from the dashboard
-ensure mirsal-bridge
+ensure m2-bridge
 ```
 
 The bridge polls `/api/bridge/poll` every 1.5 s (configurable via `airp_poll_interval_ms`), executes whitelisted commands via named handlers, and acks them. 401 = wrong token; 402 = subscription inactive.

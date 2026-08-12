@@ -91,7 +91,7 @@ local function pollOnce()
             return
         end
         if status == 402 then
-            print(TAG .. ' poll rejected: subscription inactive (renew your Mirsal plan)')
+            print(TAG .. ' poll rejected: subscription inactive (renew your M2 plan)')
             return
         end
         if status ~= 200 then

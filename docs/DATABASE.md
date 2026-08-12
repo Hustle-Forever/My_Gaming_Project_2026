@@ -84,4 +84,4 @@ See [CONCIERGE.md](CONCIERGE.md). Player data is **minimized then purged**: sess
 
 ## Emulator
 
-`firebase.json` pins Auth :9099 and Firestore :8080, project `demo-mirsal` (demo prefix = emulator-only, no real project touched). `npm run seed:emulator` proves write/read-back.
+`firebase.json` pins Auth :9099 and Firestore :8080, project `demo-m2` (demo prefix = emulator-only, no real project touched). `npm run seed:emulator` proves write/read-back.

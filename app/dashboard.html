@@ -420,7 +420,7 @@ html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right
       </div>
       <div class="okline" id="bridgeMsg"></div>
       <ol class="steps">
-        <li data-i="in1">Download the <b>mirsal-bridge</b> folder and drop it into your server’s <b>resources/</b>.</li>
+        <li data-i="in1">Download the <b>m2-bridge</b> folder and drop it into your server’s <b>resources/</b>.</li>
         <li data-i="in2">Paste the two lines above into <b>server.cfg</b> (button copies them ready-made).</li>
         <li data-i="in3">Restart the server — the dot above turns green on the first poll.</li>
       </ol>
@@ -559,7 +559,7 @@ html[dir="rtl"] .rp-restable td,html[dir="rtl"] .rp-restable th{text-align:right
 <script src="firebase-config.js"></script>
 <script type="module">
 /* Same Firebase handshake as index.html — persisted session known ->
-   "mirsal-auth-ready", so reloads keep owners signed in. */
+   "m2-auth-ready", so reloads keep owners signed in. */
 const FIREBASE_CONFIG = window.FIREBASE_CONFIG || { apiKey: "PASTE_", useEmulator: false };
 // HARD RULE: the emulator only ever applies on localhost. A deployed site
 // must NEVER call 127.0.0.1, even if the flag ships enabled by mistake.
@@ -572,11 +572,11 @@ try {
       sendEmailVerification, sendPasswordResetEmail } =
       await import("https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js");
     const app = initializeApp(USE_EMU
-      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-mirsal" : FIREBASE_CONFIG.projectId }
+      ? { apiKey: "demo-key", authDomain: "demo.firebaseapp.com", projectId: FIREBASE_CONFIG.projectId === "PASTE_PROJECT_ID" ? "demo-m2" : FIREBASE_CONFIG.projectId }
       : FIREBASE_CONFIG);
     const auth = getAuth(app);
     if (USE_EMU) connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-    window.__mirsalFirebase = {
+    window.__m2Firebase = {
       async signIn(email, password) { const c = await signInWithEmailAndPassword(auth, email, password); return c.user.getIdToken(); },
       async getToken(force) { return auth.currentUser ? auth.currentUser.getIdToken(Boolean(force)) : null; },
       signOut() { return signOut(auth); },
@@ -589,14 +589,14 @@ try {
     let first = true;
     onAuthStateChanged(auth, (user) => {
       if (!first) return; first = false;
-      document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: Boolean(user) } }));
+      document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: Boolean(user) } }));
     });
   } else {
-    document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
+    document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: false } }));
   }
 } catch (err) {
   console.warn("Firebase init failed:", err);
-  document.dispatchEvent(new CustomEvent("mirsal-auth-ready", { detail: { signedIn: false } }));
+  document.dispatchEvent(new CustomEvent("m2-auth-ready", { detail: { signedIn: false } }));
 }
 </script>
 
@@ -627,7 +627,7 @@ const I18N={
   copyCfg:"Copy server.cfg lines",rotate:"Rotate token",copied:"Copied ✓",
   rotSure:"Rotate the bridge token?",rotWarn:"Your server stops receiving commands until you paste the new token into server.cfg.",
   rotYes:"Yes, rotate",cancel:"Cancel",rotated:"New token generated — update server.cfg. The old one is dead.",
-  in1:"Download the mirsal-bridge folder and drop it into your server’s resources/.",
+  in1:"Download the m2-bridge folder and drop it into your server’s resources/.",
   in2:"Paste the two lines above into server.cfg (button copies them ready-made).",
   in3:"Restart the server — the dot above turns green on the first poll.",
   plTitle:"Plan",plActiveSub:"Open access — your account is active. Everything below is included.",
@@ -695,7 +695,7 @@ const I18N={
   copyCfg:"نسخ أسطر server.cfg",rotate:"تدوير الرمز",copied:"تم النسخ ✓",
   rotSure:"تدوير رمز الجسر؟",rotWarn:"سيرفرك يتوقف عن استقبال الأوامر حتى تلصق الرمز الجديد في server.cfg.",
   rotYes:"نعم، دوّر",cancel:"إلغاء",rotated:"تم توليد رمز جديد — حدّث server.cfg. القديم توقف.",
-  in1:"نزّل مجلد mirsal-bridge وحطه داخل resources/ في سيرفرك.",
+  in1:"نزّل مجلد m2-bridge وحطه داخل resources/ في سيرفرك.",
   in2:"الصق السطرين اللي فوق في server.cfg (الزر ينسخهم جاهزين).",
   in3:"أعد تشغيل السيرفر — النقطة فوق تصير خضراء مع أول اتصال.",
   plTitle:"الاشتراك",plActiveSub:"وصول مفتوح — حسابك مفعّل. كل اللي تحت مشمول.",
@@ -768,7 +768,7 @@ function setAuthTab(tab){AUTHTAB=tab;
 /* Email verification: the API 403s (EMAIL_UNVERIFIED) until the link in the
    email is clicked; this screen explains and offers resend / continue. */
 let VCOOL=0,VTIMER=null;
-const fbx=()=>window.__mirsalFirebase;
+const fbx=()=>window.__m2Firebase;
 function showVerify(email){
  $("vEmail").textContent=email||(fbx()&&fbx().email())||"";
  $("auth").classList.remove("show");$("boot").classList.add("hide");
@@ -797,7 +797,7 @@ async function forgotPassword(){
  $("aErr").style.color="var(--lime)";$("aErr").textContent=t("resetSent");
  setTimeout(()=>{$("aErr").style.color="";$("aErr").textContent="";},6000);}
 async function authedFetch(path,opts={},_retried){
- const fb=window.__mirsalFirebase;
+ const fb=window.__m2Firebase;
  const token=fb?await fb.getToken(Boolean(_retried)).catch(()=>null):null;
  const r=await fetch((CONFIG.BACKEND_URL||"")+path,{...opts,
   headers:{"Content-Type":"application/json","Authorization":"Bearer "+(token||""),...(opts.headers||{})}});
@@ -805,7 +805,7 @@ async function authedFetch(path,opts={},_retried){
  return r;
 }
 function sessionExpired(){
- if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+ if(window.__m2Firebase)window.__m2Firebase.signOut().catch(()=>{});
  stopRefresh();TENANT=null;$("dash").classList.add("hide");
  $("auth").classList.add("show");setAuthTab("login");$("aErr").textContent=t("errExpired");}
 async function doAuth(){
@@ -813,7 +813,7 @@ async function doAuth(){
  $("aErr").textContent="";
  if(!email||!pass){$("aErr").textContent=t("errFields");return;}
  if(AUTHTAB==="signup"&&pass.length<8){$("aErr").textContent=t("errPass");return;}
- const fb=window.__mirsalFirebase;
+ const fb=window.__m2Firebase;
  if(!fb){$("aErr").textContent=t("errNet");return;}
  $("authBtn").disabled=true;
  try{
@@ -840,7 +840,7 @@ async function doAuth(){
  }finally{$("authBtn").disabled=false;}
 }
 function doSignOut(){
- if(window.__mirsalFirebase)window.__mirsalFirebase.signOut().catch(()=>{});
+ if(window.__m2Firebase)window.__m2Firebase.signOut().catch(()=>{});
  stopRefresh();TENANT=null;location.href="/";}
 
 /* ---- data ---- */
@@ -918,7 +918,7 @@ function render(){
 }
 function cfgLines(){
  const base=CONFIG.BACKEND_URL||location.origin;
- return `set airp_backend_url "${base}"\nset airp_bridge_token "${TENANT?TENANT.bridgeToken:""}"\nensure mirsal-bridge`;
+ return `set airp_backend_url "${base}"\nset airp_bridge_token "${TENANT?TENANT.bridgeToken:""}"\nensure m2-bridge`;
 }
 function renderToken(){
  if(!TENANT)return;
@@ -1231,7 +1231,7 @@ function cgRenderStats(){
 }
 
 /* ---- boot ---- */
-document.addEventListener("mirsal-auth-ready",async(e)=>{
+document.addEventListener("m2-auth-ready",async(e)=>{
  if(e.detail.signedIn){
   if(fbx()&&!fbx().emailVerified()){showVerify();return;} // persisted unverified session
   await enter();
