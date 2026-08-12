@@ -50,7 +50,8 @@ async function main() {
   const report = { headless: HEADLESS, steps: [] };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'm2edge-'));
   let dev, edge, client;
-  const cleanup = () => { try { client && client.close(); } catch (e) {} try { edge && edge.kill(); } catch (e) {} try { dev && dev.kill(); } catch (e) {} };
+  const killTree = (p) => { if (!p || !p.pid) return; try { if (process.platform === 'win32') spawn('taskkill', ['/F', '/T', '/PID', String(p.pid)], { stdio: 'ignore' }); else p.kill(); } catch (e) {} };
+  const cleanup = () => { try { client && client.close(); } catch (e) {} killTree(edge); killTree(dev); };
   process.on('exit', cleanup);
 
   try {

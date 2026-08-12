@@ -54,7 +54,8 @@ async function main() {
   const report = { steps: [] };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'm2route-'));
   let server, edge, client;
-  const cleanup = () => { try { client && client.close(); } catch (e) {} try { edge && edge.kill(); } catch (e) {} try { server && server.close(); } catch (e) {} };
+  const killTree = (p) => { if (!p || !p.pid) return; try { if (process.platform === 'win32') spawn('taskkill', ['/F', '/T', '/PID', String(p.pid)], { stdio: 'ignore' }); else p.kill(); } catch (e) {} };
+  const cleanup = () => { try { client && client.close(); } catch (e) {} killTree(edge); try { server && server.close(); } catch (e) {} };
   process.on('exit', cleanup);
   try {
     server = await startServer();

@@ -16,7 +16,9 @@
 | `app/apply.html` | `/apply/{slug}` | **public** Whitelist Officer interview page — no account: welcome, identity, conversational AI interview (EN/AR, voice, localStorage resume), submitted. Reads only `/api/apply/*`. See [WHITELIST.md](WHITELIST.md) |
 | `docs/index.html` | `/docs/` | project showcase page (dev server serves it too) |
 
-`app/index.html` is `LOCAL_PREVIEW=false` (production) — sign-in uses the real backend + Firebase Auth, so it needs the deployed site or `npm run dev`; there is no offline demo mode. Rewrites live in `vercel.json` (which also sets the security headers/CSP); `scripts/dev-server.js` mirrors both locally. The old `app/app.js`/`style.css`/`voice.js` leftovers are deleted.
+`app/index.html` is `LOCAL_PREVIEW=false` (production) — sign-in uses the real backend + Firebase Auth, so it needs the deployed site or `npm run dev`; there is no offline demo mode. Rewrites live in `vercel.json` (which also sets the security headers/CSP); `scripts/dev-server.js` mirrors both locally.
+
+> **Static assets need a rewrite.** The pages live under `app/` but load their scripts at the site root (`/fx.js`, `/speech.js`, `/voice.js`, `/firebase-config.js`). The dev-server serves `app/` as the web root automatically, but **Vercel needs one explicit rewrite per root asset** in `vercel.json` (`/voice.js → /app/voice.js`, …). Miss one and it 404s (served as `text/plain`, which the browser refuses to execute). `npm run voice:browser` and `scripts/verify-deployed-routing.js` verify the voice scripts load as `text/javascript` and the loop runs under the real routing.
 
 ## Wiring (both pages)
 

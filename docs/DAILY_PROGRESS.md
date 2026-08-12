@@ -6,6 +6,11 @@
 
 ---
 
+## 2026-08-12 — Voice deploy fix (routing + notice spam)
+
+- **`/speech.js` and `/voice.js` 404'd on Vercel** (browser refused the `text/plain` 404 body → `window.M2Voice`/`M2Speech` undefined → voice dead). Root cause: `vercel.json` had explicit rewrites for `/firebase-config.js` and `/fx.js` but none for the two files added later. Added matching rewrites so both resolve to `/app/*.js` with a JavaScript MIME type. Verified with **`scripts/verify-deployed-routing.js`** — a static server honoring `vercel.json`'s rewrites, driven in real Edge: both scripts return `text/javascript` (200), the modules execute, and the loop runs `listening→…→idle`. Also documented in FRONTEND.md that every root-level asset needs a rewrite.
+- **"Voice isn't supported" spammed the chat** on repeated mic taps — now guarded to appear once per session. Test added.
+
 ## 2026-08-12 — TASK_M2_VOICE_FIX (make the voice loop actually work in a real browser)
 
 Voice — the core "talk to your server" feature — was **stuck** in a real browser: tap the mic and the conversation never completes. The jsdom tests passed, so this was a mock/reality gap. Rebuilt the whole thing against how the Web Speech API *actually* behaves and verified it in real Edge. Suite 226→242.
