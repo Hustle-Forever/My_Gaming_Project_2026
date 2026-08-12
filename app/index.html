@@ -317,6 +317,8 @@ html[dir="rtl"] .m.b{border-bottom-left-radius:16px;border-bottom-right-radius:6
 .speakbar.show{display:flex}
 .speakbar .sorb{position:relative;width:26px;height:26px;flex:0 0 auto}
 .speakbar .sorb .orb{position:absolute;inset:0;animation:spk 1.7s ease-in-out infinite}
+/* thinking looks distinct from speaking: slower + dimmer, no bright pulse */
+.speakbar.thinking .sorb .orb{animation:spk 2.8s ease-in-out infinite;opacity:.55}
 @keyframes spk{0%,100%{transform:scale(.86);opacity:.7}50%{transform:scale(1.04);opacity:1}}
 .speakbar .stxt{font-size:13.5px;color:var(--dim);font-weight:500}
 .speakbar .sstop{display:flex;align-items:center;gap:7px;border:0;background:var(--surface-3);color:var(--text);
@@ -681,6 +683,7 @@ const I18N={
   micInsecure:"Voice needs a secure page (HTTPS or localhost).",micNoDevice:"No microphone found.",
   voiceNet:"Voice service unreachable — check your connection.",voiceSlow:"That took too long — tap the mic to try again.",
   voiceErr:"Voice hit a snag — tap the mic to try again.",
+  noArVoice:"No Arabic voice is installed on this device — using another voice.",
   ok:"Connected",off:"Offline",locked:"Plan inactive",
   stQueued:"Sent to server",stNone:"Didn’t catch that",stAuth:"Session expired — sign in again",
   stOff:"Couldn’t reach the server — check your connection and try again",stLocked:"Subscription inactive",
@@ -711,6 +714,7 @@ const I18N={
   micInsecure:"الصوت يحتاج صفحة آمنة (HTTPS أو localhost).",micNoDevice:"لا يوجد ميكروفون.",
   voiceNet:"خدمة الصوت غير متاحة — تحقق من اتصالك.",voiceSlow:"استغرق وقتًا طويلًا — اضغط المايك للمحاولة.",
   voiceErr:"واجه الصوت مشكلة — اضغط المايك للمحاولة.",
+  noArVoice:"لا يوجد صوت عربي على هذا الجهاز — سنستخدم صوتًا آخر.",
   ok:"متصل",off:"غير متصل",locked:"الاشتراك موقوف",
   stQueued:"أُرسل للسيرفر",stNone:"ما فهمت الطلب",stAuth:"انتهت الجلسة — سجّل الدخول من جديد",
   stOff:"تعذّر الوصول للسيرفر — تأكد من الاتصال وحاول مرة ثانية",stLocked:"الاشتراك غير مفعّل",
@@ -990,13 +994,13 @@ async function send(pre){
  const inp=$("cmd");const x=(pre!==undefined?pre:inp.value).trim();if(!x)return;
  inp.value="";const b=addU(x);const mode=MODE;
  const res=await runTurn(x,mode,b);
- if(res&&res.ok&&res.speakText&&window.M2Speech)M2Speech.speak(res.speakText,{lang:res.lang,source:"auto"});
+ if(res&&res.ok){maybeWarnVoice(res.lang);if(res.speakText&&window.M2Speech)M2Speech.speak(res.speakText,{lang:res.lang,source:"auto"});}
 }
 // The voice machine's "thinking" step: render the turn, hand the speakable reply
 // back so the machine speaks it (with its watchdog) and continues the loop.
 function voiceHandle(transcript,cb){
  const b=addU(transcript);
- runTurn(transcript,MODE,b).then(res=>{ if(res&&res.ok)cb({text:res.speakText,lang:res.lang}); else cb(null,(res&&res.err)||t("stErr")); })
+ runTurn(transcript,MODE,b).then(res=>{ if(res&&res.ok){maybeWarnVoice(res.lang);cb({text:res.speakText,lang:res.lang});} else cb(null,(res&&res.err)||t("stErr")); })
   .catch(()=>cb(null,t("stErr")));
 }
 // client-side language guess, mirrors lib/lang.js (used for the offline preview
@@ -1062,11 +1066,19 @@ function onVoiceState(state){
  if(listen){$("ltxt").textContent=t("listening");$("ltxt").classList.remove("has");startAnalyser();}
  else stopAnalyser();
  clearThinkHint();
- if(state==="thinking"){showSpeakbar(t("thinking"));armThinkHint();stopBargeWatch();}
- else if(state==="speaking"){showSpeakbar(t("speaking"));startBargeWatch();}
- else {hideSpeakbar();stopBargeWatch();}
+ const bar=$("speakbar");
+ if(state==="thinking"){showSpeakbar(t("thinking"));if(bar)bar.classList.add("thinking");armThinkHint();stopBargeWatch();}
+ else if(state==="speaking"){showSpeakbar(t("speaking"));if(bar)bar.classList.remove("thinking");startBargeWatch();}
+ else {hideSpeakbar();if(bar)bar.classList.remove("thinking");stopBargeWatch();}
  $("mic").classList.toggle("on", state!=="idle");
  updateDbg(state);
+}
+// One-time notice if the device has no voice for the reply language (e.g. no
+// Arabic voice installed) — we still degrade to any available voice, never throw.
+let VOICE_WARNED={};
+function maybeWarnVoice(lang){
+ if(!window.M2Speech||!M2Speech.supported()||VOICEMODE==="off")return;
+ if(lang==="ar"&&!M2Speech.hasVoiceFor("ar")&&!VOICE_WARNED.ar){VOICE_WARNED.ar=true;sysMsg(t("noArVoice"));}
 }
 function onVoiceEvent(evt,detail){DBG.last=evt;DBG.detail=detail;updateDbg();}
 function onVoiceError(code,message){

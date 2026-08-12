@@ -14,7 +14,8 @@
     "seed": "node scripts/seed.js",
     "seed:emulator": "firebase emulators:exec --only firestore --project demo-m2 \"node scripts/seed.js --verify\"",
     "activate": "node scripts/activate.js",
-    "smoke:emulator": "firebase emulators:exec --only auth,firestore --project demo-m2 \"node scripts/smoke-emulator.js\""
+    "smoke:emulator": "firebase emulators:exec --only auth,firestore --project demo-m2 \"node scripts/smoke-emulator.js\"",
+    "voice:browser": "node scripts/browser-voice-check.js"
   },
   "dependencies": {
     "@google/genai": "^1.16.0",

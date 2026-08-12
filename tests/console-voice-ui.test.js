@@ -118,3 +118,32 @@ test('the machine handler renders a turn and returns the speakable reply', async
   assert.ok(reply && /Hi\./.test(reply.text), 'reply text handed back to the machine');
   assert.equal(reply.lang, 'en');
 });
+
+test('M5: thinking is visually distinct from speaking (class toggle)', async () => {
+  const { win, V } = await loadConsole();
+  const onState = V.cfg().onState;
+  onState('thinking');
+  assert.ok(win.document.getElementById('speakbar').classList.contains('thinking'));
+  onState('speaking');
+  assert.ok(!win.document.getElementById('speakbar').classList.contains('thinking'));
+});
+
+test('M4: a hidden tab stops the loop (never leave the mic open in the background)', async () => {
+  const { win, V } = await loadConsole();
+  win.M2Voice.start();                     // running
+  Object.defineProperty(win.document, 'hidden', { value: true, configurable: true });
+  win.document.dispatchEvent(new win.Event('visibilitychange'));
+  assert.ok(V.calls.includes('stop'), 'loop stopped when the tab was hidden');
+});
+
+test('M4: no Arabic voice → one-time notice, never thrown', async () => {
+  const { win, Sp } = await loadConsole();
+  Sp.engine.hasVoiceFor = () => false;     // device has no ar voice
+  assert.doesNotThrow(() => win.maybeWarnVoice('ar'));
+  const feed = win.document.getElementById('feed').textContent;
+  assert.match(feed, /Arabic voice|صوت عربي/);
+  const count1 = (win.document.getElementById('feed').textContent.match(/Arabic voice|صوت عربي/g) || []).length;
+  win.maybeWarnVoice('ar');                // second time: no new notice
+  const count2 = (win.document.getElementById('feed').textContent.match(/Arabic voice|صوت عربي/g) || []).length;
+  assert.equal(count1, count2, 'warned only once');
+});
