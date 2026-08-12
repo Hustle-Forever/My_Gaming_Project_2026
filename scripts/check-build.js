@@ -1,8 +1,12 @@
-// scripts/check-build.js - the local "build" gate. Vercel doesn't run a build
-// step for this static+functions project, so this stands in: it (1) requires
-// every deployable Serverless Function so a syntax/require error fails fast,
-// and (2) enforces the Hobby-plan limit of 12 functions, which is what a
-// too-many-functions deploy fails on. Run: npm run build.
+// scripts/check-build.js - a LOCAL pre-deploy gate. Run: npm run check.
+// It (1) requires every deployable Serverless Function so a syntax/require
+// error fails fast, and (2) enforces the Hobby-plan limit of 12 functions,
+// which is what a too-many-functions deploy fails on.
+//
+// IMPORTANT: this is deliberately NOT the npm "build" script. This project is
+// static files + serverless functions with NO build step; defining a "build"
+// script makes Vercel switch to framework-build mode and then fail looking for
+// an output directory that doesn't exist. Keep it named "check".
 const fs = require('fs');
 const path = require('path');
 
