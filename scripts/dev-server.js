@@ -14,28 +14,31 @@ const DOCS_DIR = path.join(ROOT, 'docs');
 const PORT = Number(process.env.PORT || 3000);
 
 // pathname -> module path (lazy require so partially-built milestones still run)
+// Grouped routes are single Vercel functions (api/<group>/[action].js) on
+// deploy; here we point straight at the underscore-prefixed handler modules
+// they dispatch to, so dev behaves identically to production.
 const API_ROUTES = {
   '/api/health': './api/health',
   '/api/signup': './api/signup',
   '/api/command': './api/command',
-  '/api/bridge/poll': './api/bridge/poll',
-  '/api/bridge/ack': './api/bridge/ack',
-  '/api/tenant/me': './api/tenant/me',
-  '/api/tenant/key': './api/tenant/key',
-  '/api/tenant/rotate-bridge-token': './api/tenant/rotate-bridge-token',
-  '/api/stripe/webhook': './api/stripe/webhook',
   '/api/scan': './api/scan',
   '/api/scan-status': './api/scan-status',
-  '/api/whitelist/config': './api/whitelist/config',
-  '/api/apply/config': './api/apply/config',
-  '/api/apply/start': './api/apply/start',
-  '/api/apply/answer': './api/apply/answer',
-  '/api/apply/submit': './api/apply/submit',
-  '/api/apply/resume': './api/apply/resume',
-  '/api/whitelist/applications': './api/whitelist/applications',
-  '/api/whitelist/decide': './api/whitelist/decide',
-  '/api/whitelist/stats': './api/whitelist/stats',
-  '/api/whitelist/test-webhook': './api/whitelist/test-webhook',
+  '/api/stripe/webhook': './api/stripe/webhook',
+  '/api/bridge/poll': './api/bridge/_poll',
+  '/api/bridge/ack': './api/bridge/_ack',
+  '/api/tenant/me': './api/tenant/_me',
+  '/api/tenant/key': './api/tenant/_key',
+  '/api/tenant/rotate-bridge-token': './api/tenant/_rotate-bridge-token',
+  '/api/whitelist/config': './api/whitelist/_config',
+  '/api/whitelist/applications': './api/whitelist/_applications',
+  '/api/whitelist/decide': './api/whitelist/_decide',
+  '/api/whitelist/stats': './api/whitelist/_stats',
+  '/api/whitelist/test-webhook': './api/whitelist/_test-webhook',
+  '/api/apply/config': './api/apply/_config',
+  '/api/apply/start': './api/apply/_start',
+  '/api/apply/answer': './api/apply/_answer',
+  '/api/apply/submit': './api/apply/_submit',
+  '/api/apply/resume': './api/apply/_resume',
 };
 
 const MIME = {

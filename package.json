@@ -7,6 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "build": "node scripts/check-build.js",
     "dev": "node scripts/dev-server.js",
     "test": "firebase emulators:exec --only auth,firestore --project demo-mirsal \"node --test tests/*.test.js\"",
     "emulators": "firebase emulators:start --only auth,firestore --project demo-mirsal",
