@@ -65,6 +65,16 @@ See [WHITELIST.md](WHITELIST.md). All applicant data is **personal data**: only 
 | `rl_apply/{ipHash}` | per-IP apply throttle (hashed IP, `expireAt`) |
 | `tenants/{uid}` (added) | `rlScanWindowStart/rlScanCount` earlier; whitelist adds no tenant-doc fields |
 
+## The Concierge
+
+See [CONCIERGE.md](CONCIERGE.md). Player data is **minimized then purged**: session docs hold flow state only (never raw chat), and player questions are reduced to a coarse theme before storage. `purgeConciergeData(uid)` drops both collections on the retention window / owner request.
+
+| collection | shape |
+|---|---|
+| `tenants/{uid}/concierge/config` | enabled (default false), tone, languages[], greeting{}, askPrompt{}, checkinSeconds, retentionDays, features{greet,ask,guide,checkin,introduce}, recommendJobs[] |
+| `tenants/{uid}/conciergeSessions/{playerId}` | iv{} (serialized flow state), status (in_progress\|done\|dismissed), phase, language, choiceJobId, arrivedAtMs, stillPlaying, lastPhaseAtMs — **no raw chat** |
+| `tenants/{uid}/conciergeEvents` | append-only funnel markers: type (arrived\|greeted\|answered\|reached\|checkin\|still_playing\|returned\|dismissed\|question), playerId, theme? (coarse only), atMs |
+
 ## Design choices
 
 - **No composite indexes needed:** the poll query filters on `status` only (single-field, auto-indexed) and sorts client-side by `createdAt`.

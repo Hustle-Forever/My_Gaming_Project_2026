@@ -1,15 +1,15 @@
 # Testing
 
-**Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-10
+**Area:** What is proven, how to run it, and what each test guards · **Last updated:** 2026-08-12
 
-> One command — `npm test` — boots the Firebase emulators and runs 88 tests: 48 platform tests, 40 Server Scanner tests, and 51 Whitelist Officer tests (pure — parsers, detection, checks, the scan API, and a jsdom render of the dashboard). No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
+> One command — `npm test` — boots the Firebase emulators and runs **185 tests**: 48 platform, 40 Server Scanner, 51 Whitelist Officer, and 46 Concierge. No mocks of our own code: HTTP tests talk to a spawned dev-server backed by emulator Auth + Firestore, exactly like production traffic.
 
 ---
 
 ## Running
 
 ```bash
-npm test                 # the suite: 139 tests (needs Java ≥11 for the Firestore emulator)
+npm test                 # the suite: 185 tests (needs Java ≥11 for the Firestore emulator)
 npm run smoke:emulator   # the original 15-check end-to-end story, kept as a second opinion
 cd backend && npm run smoke   # legacy standalone demo (7 checks)
 ```
@@ -48,6 +48,13 @@ tests/whitelist-apply-ui.test.js jsdom render of app/apply.html (welcome→inter
 tests/whitelist-review.test.js   owner queue/detail/decide/delete/stats, cross-tenant scoping
 tests/whitelist-ui.test.js       jsdom render of the dashboard Whitelist section (EN/AR)
 tests/whitelist-notify.test.js   Discord webhook interface (no-op unconfigured, rejects bad URL)
+tests/concierge-config.test.js   config validation (tone/languages/check-in/retention), defaults, runtimeView
+tests/concierge-session.test.js  onboarding state machine, message + duration caps, returning-player logic
+tests/concierge-recommend.test.js scanner-report-driven job/destination recommendation + nearby player
+tests/concierge-message.test.js  the CLOSED action set, sanitize-through-closed, deterministic no-key fallback
+tests/concierge-bridge.test.js   bridge e2e (join→greeting→choice→waypoint→ack), auth/gate, /stats, LUA static grep
+tests/concierge-analytics.test.js pure funnel/retention/arrivals/themes aggregation over a fixed cohort
+tests/concierge-ui.test.js       jsdom render of the dashboard Concierge section (charts, empty state, EN/AR)
 ```
 
 ## What each area proves

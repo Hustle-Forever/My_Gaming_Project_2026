@@ -116,6 +116,16 @@ Resume-token protected; `appId`→uid via a private index so the uid never reach
 
 See [WHITELIST.md](WHITELIST.md).
 
+### The Concierge — bridge endpoints (x-bridge-token + pay-gate)
+- `POST /api/concierge/event` `{type(join|choice|message|dismiss), playerId, playerName?, jobId?, text?, language?}` → `{onboard, actions[]}`. `actions[]` is **only ever** `send_message` / `set_waypoint` / `show_menu`. Disabled concierge → `{onboard:false, actions:[]}`; inactive plan → 402.
+- `POST /api/concierge/reply` `{playerId}` → `{actions[]}` — polled on the existing outward loop for the ~5-min check-in (no new ports).
+
+### The Concierge — owner endpoints (ID token verified + pay-gate)
+- `GET/POST /api/concierge/config` — read/update setup (enabled, tone, languages, check-in seconds, retention days; validated).
+- `GET /api/concierge/stats` → funnel (arrived→greeted→answered→reached→checkin), retention (still-playing / returned / rate), arrivals-by-day, ranked question themes.
+
+The whole group is one Vercel function (`api/concierge/[action].js`). See [CONCIERGE.md](CONCIERGE.md).
+
 ### `POST /api/stripe/webhook` — open (stub)
 Always 501 `NOT_IMPLEMENTED`. The seam where subscription events will flip `active` / `subscriptionStatus`.
 

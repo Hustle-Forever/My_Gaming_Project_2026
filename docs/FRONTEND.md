@@ -11,7 +11,7 @@
 | page | URL | purpose |
 |---|---|---|
 | `app/index.html` | `/` | **one page, three views:** marketing site (hero, features, live demo, pricing, docs, FAQ) → auth modal (sign up / sign in) → operator console (Run/Ask, quick commands, full-screen voice overlay with live waveform, feed, setup notices). Views swap client-side; a persisted session skips straight to the console on load. |
-| `app/dashboard.html` | `/dashboard` | owner dashboard **in the same design system**: 4-step setup checklist, AI-key card, server card, **Server Report** card ([SCANNER.md](SCANNER.md)), **Whitelist Officer** card (queue / detail with transcript + evidence + decisions / setup / stats — [WHITELIST.md](WHITELIST.md)), plan card, console + docs links |
+| `app/dashboard.html` | `/dashboard` | owner dashboard **in the same design system**: 4-step setup checklist, AI-key card, server card, **Server Report** card ([SCANNER.md](SCANNER.md)), **Whitelist Officer** card (queue / detail with transcript + evidence + decisions / setup / stats — [WHITELIST.md](WHITELIST.md)), **Concierge** card (enable/tone/check-in setup + live funnel / retention / arrivals-over-time / question themes — [CONCIERGE.md](CONCIERGE.md)), plan card, console + docs links |
 | `app/firebase-config.js` | `/firebase-config.js` | ONE paste point for the public Firebase web config (both pages load it) |
 | `app/apply.html` | `/apply/{slug}` | **public** Whitelist Officer interview page — no account: welcome, identity, conversational AI interview (EN/AR, voice, localStorage resume), submitted. Reads only `/api/apply/*`. See [WHITELIST.md](WHITELIST.md) |
 | `docs/index.html` | `/docs/` | project showcase page (dev server serves it too) |

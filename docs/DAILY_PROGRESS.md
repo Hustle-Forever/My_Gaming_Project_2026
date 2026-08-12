@@ -8,6 +8,19 @@
 
 ## 2026-08-12
 
+- **TASK_M2_CONCIERGE — The Concierge (all 8 milestones, TDD, suite 139→185)** — an in-game AI that onboards new players to fight FiveM's retention death spiral. Greets on join, asks what character they want, drops a waypoint to a matching destination, points out a nearby player, checks back in ~5 min — EN/AR. **Notify-only by construction:** a closed action set of exactly `send_message` / `show_menu` / `set_waypoint`, enforced in the AI schema, the message layer, the runtime, and the bridge Lua (a static grep fails the build if any write/spawn/teleport/give primitive appears). Reuses the scanner report, the pay-gate, the bridge auth, the error envelope, and the design system. Works with **no AI key** via a deterministic per-phase fallback.
+  - **M1 config** (6b93524): `lib/concierge/config.js` defaults (disabled by default) + `validateConfig` (tone/languages/check-in 60–1800/retention 1–365, AR-base required); Firestore session/event/purge helpers; GET/POST `/api/concierge/config`.
+  - **M2 session** (7325e61): `lib/concierge/session.js` state machine (greet→choose→guide→await_checkin→checkin→done), ≤8-message + ≤30-min caps, serialize/restore, `shouldOnboard` returning-player logic.
+  - **M3 recommend** (93d412b): `lib/concierge/recommend.js` reads the read-only scanner report for real on-server destinations, bilingual `KNOWN` fallback, `pickNearbyPlayer`.
+  - **M4 message layer + AI** (65424e0): `lib/concierge/messages.js` closed action set + sanitize-through-closed + deterministic fallbacks; `personality.js`/`brain.js`; `providers/gemini.js` `conciergeReply` forced function calling (three-verb enum, 300 tokens).
+  - **M5 bridge integration** (this batch): `api/concierge/_event` + `_reply` (bridge auth + gate), `lib/concierge/runtime.js` (session persist + funnel events + closed-set belt), `fivem-bridge/concierge.lua` (notify-only, no new ports). Mock-bridge e2e + static LUA grep.
+  - **M6 analytics** (this batch): `lib/concierge/analytics.js` pure funnel/retention/arrivals-by-day/question-theme aggregation over the append-only events.
+  - **M7 owner dashboard** (dbf37d6): `api/concierge/_stats.js` + the dashboard Concierge card — enable/tone/check-in setup, live funnel, retention tiles, arrivals-over-time bars, ranked themes; EN/AR RTL, 380px, empty state; jsdom render tests.
+  - **M8 docs** (this commit): new docs/CONCIERGE.md + API/ENGINEERING/DATABASE/SECURITY/FRONTEND/UIUX/TESTING synced; showcase 185 tests + Concierge roadmap row.
+  - **Decisions on the human's behalf:** disabled-by-default (opt-in per server); deterministic no-key fallback so onboarding works before any Gemini key; player chat relayed for a reply then reduced to a coarse theme and never stored verbatim; kept it to one Vercel function via the `[action].js` dispatcher (11/12 on Hobby).
+  - **Unverifiable:** live Gemini replies (tests use the deterministic fallback); a real in-game FiveM round-trip (a mock bridge stands in; the Lua is static-analysed, not run in-game); a browser screenshot of the dashboard section (chrome-devtools daemon still broken — jsdom render tests of the shipped code stand in, EN+AR).
+  - **npm test 185/185, smoke 15/15.**
+
 - **TASK_M2_WHITELIST — the Whitelist Officer (all 6 milestones, TDD, suite 88→139)** — the whitelist form replaced by an AI interview. Additive, needs no server access, demoable today.
   - **M1 config** (6171654): `lib/whitelist/config.js` bilingual defaults + validation (rejects empty/AR-missing/over-cap sets, threshold sanity), `publicView` projection; stable unique slugs (`whitelistSlugs/{slug}→uid`); GET/POST `/api/whitelist/config`.
   - **M2 interview** (3894755): `lib/whitelist/interview.js` state machine — ask → injected judge → follow-up (≤2) → next → done; EN/AR; per-answer + turn caps; serialize/restore for resume-after-drop. Judge injected (deterministic in tests, provider-backed in prod); a judge failure never traps the applicant.
