@@ -4,11 +4,11 @@
 const gemini = require('./gemini');
 const claude = require('./claude');
 const { stubInterpret } = require('../lib/stub-interpret');
+const { fallbackAnswer } = require('../lib/ask-persona');
 
 const PROVIDERS = { gemini, claude };
 // Rogue-AI simulator for the test suite ONLY - see providers/fake.js.
 if (process.env.NODE_ENV === 'test') PROVIDERS.fake = require('./fake');
-const isArabic = (text) => /[؀-ۿ]/.test(String(text));
 
 // Free-form text -> validated whitelisted action (or none).
 async function interpretText(tenant, apiKey, text) {
@@ -24,19 +24,22 @@ async function interpretText(tenant, apiKey, text) {
 }
 
 // Ask mode: a short text answer, no action, nothing queued.
-async function askText(tenant, apiKey, text) {
+// `ctx` carries { language, server } — language is the language the operator
+// wrote in (the reply MUST match it), server is the latest scan's model (for
+// concreteness). allowedActions come from the tenant.
+async function askText(tenant, apiKey, text, ctx = {}) {
+  const askCtx = { language: ctx.language === 'ar' ? 'ar' : 'en', allowedActions: tenant.allowedActions, server: ctx.server };
   if (apiKey) {
     const provider = PROVIDERS[tenant.provider] || gemini;
     try {
-      const reply = await provider.ask(apiKey, text);
+      const reply = await provider.ask(apiKey, text, askCtx);
       if (reply) return reply;
     } catch (err) {
-      console.error(`[providers] ${provider.name} ask failed (${err.message}) - using canned reply`);
+      console.error(`[providers] ${provider.name} ask failed (${err.message}) - using deterministic fallback`);
     }
   }
-  return isArabic(text)
-    ? 'وضع «سؤال» يحتاج مفتاح AI — أضِفه من لوحة التحكم. أوامر «تنفيذ» تعمل بدون مفتاح عبر المطابقة النصية.'
-    : 'Ask mode needs an AI key - add yours in the dashboard. Run commands still work without one via keyword matching.';
+  // No key (or the call failed): a genuinely helpful, language-correct answer.
+  return fallbackAnswer(askCtx);
 }
 
 // ---- Whitelist Officer: provider-backed judge + scorer (BYOK). Fall back is

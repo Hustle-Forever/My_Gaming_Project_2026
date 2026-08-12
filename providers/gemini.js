@@ -20,12 +20,10 @@ const SYSTEM_PROMPT = [
   '- Respond only by calling execute_action.',
 ].join('\n');
 
-const ASK_PROMPT = [
-  'You are M2, the assistant of a FiveM roleplay server control panel.',
-  'Answer the operator briefly (1-3 sentences), in the language they used (Arabic or English).',
-  'You only answer questions here. In-game actions run in a separate Run mode restricted to a fixed whitelist: spawn a vehicle, change weather, set the clock, heal the player, spawn NPCs, repair the vehicle.',
-  'Never claim to have performed an action, and never promise capabilities outside that list.',
-].join('\n');
+// The Ask-mode persona lives in lib/ask-persona.js so the deterministic
+// fallback (no AI key) can reuse the exact same product knowledge.
+const { askSystemPrompt } = require('../lib/ask-persona');
+function askPrompt(ctx = {}) { return askSystemPrompt(ctx); }
 
 // actions.js param defs (JSON-schema style) -> Gemini schema
 function toGeminiSchema(prop) {
@@ -100,12 +98,15 @@ async function interpret(apiKey, text, allowedActions) {
   }
 }
 
-async function ask(apiKey, text) {
+// ctx: { language, allowedActions, server } — language is the language the
+// operator wrote in (reply MUST match it); allowedActions/server let the
+// assistant be concrete about THIS server. All optional.
+async function ask(apiKey, text, ctx = {}) {
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: model(),
     contents: [{ role: 'user', parts: [{ text }] }],
-    config: { systemInstruction: ASK_PROMPT },
+    config: { systemInstruction: askPrompt(ctx) },
   });
   return (response.text || '').trim();
 }

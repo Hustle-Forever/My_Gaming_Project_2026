@@ -138,8 +138,38 @@ function validateAction(name, params, allowedActions) {
   return { action: name, params: def.validate(params || {}) };
 }
 
-// Friendly Arabic reply for the app, from a template map (no extra AI call).
-function friendlyMessage(action, params = {}) {
+// English labels for vehicles/weather, mirroring the Arabic maps above.
+const VEHICLE_EN = {
+  police: 'police car', adder: 'Adder supercar', sultan: 'Sultan', ambulance: 'ambulance',
+  taxi: 'taxi', bmx: 'BMX bike', blista: 'Blista', faggio: 'Faggio scooter',
+};
+const WEATHER_EN = {
+  clear: 'clear', rain: 'rainy', thunder: 'stormy with thunder', fog: 'foggy', snow: 'snowy',
+};
+
+// Friendly confirmation for the app, from a template map (no extra AI call).
+// `lang` follows the language the operator actually wrote in ('ar' | 'en'),
+// NOT any UI toggle — see api/command.js. Defaults to Arabic for callers that
+// don't pass one (the standalone demo backend).
+function friendlyMessage(action, params = {}, lang = 'ar') {
+  if (lang === 'en') {
+    switch (action) {
+      case 'spawn_vehicle':
+        return `Done — a ${VEHICLE_EN[params.model] || params.model} is on the way.`;
+      case 'set_weather':
+        return `Done — the weather is now ${WEATHER_EN[params.type] || params.type}.`;
+      case 'set_time':
+        return `Done — the clock is set to ${String(params.hour).padStart(2, '0')}:00.`;
+      case 'heal_player':
+        return 'Done — your health and armor are fully restored.';
+      case 'spawn_npc':
+        return params.count === 1 ? 'Done — one person is heading your way.' : `Done — ${params.count} people are heading your way.`;
+      case 'repair_vehicle':
+        return 'Done — your vehicle is fully repaired.';
+      default:
+        return "I didn't catch that.";
+    }
+  }
   switch (action) {
     case 'spawn_vehicle':
       return `تم — ${VEHICLE_AR[params.model] || params.model} في الطريق`;
