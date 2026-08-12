@@ -51,4 +51,10 @@ async function whitelistScore(tenant, apiKey, args) {
   return provider.whitelistScore(apiKey, args);
 }
 
-module.exports = { interpretText, askText, whitelistJudge, whitelistScore };
+async function conciergeReply(tenant, apiKey, args) {
+  const provider = PROVIDERS[tenant.provider] || gemini;
+  if (!provider.conciergeReply) throw new Error('provider has no conciergeReply');
+  return provider.conciergeReply(apiKey, args);
+}
+
+module.exports = { interpretText, askText, whitelistJudge, whitelistScore, conciergeReply };

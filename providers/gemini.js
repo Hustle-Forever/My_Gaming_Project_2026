@@ -192,4 +192,47 @@ async function whitelistScore(apiKey, { criteria, transcript, config }) {
   return call.args;
 }
 
-module.exports = { name: 'gemini', interpret, ask, buildFunctionDeclaration, whitelistJudge, whitelistScore };
+// ---- Concierge: short in-game onboarding reply, closed action set ----
+async function conciergeReply(apiKey, { system, phase, language, playerMessage, hints }) {
+  const ai = new GoogleGenAI({ apiKey });
+  const decl = {
+    name: 'concierge_reply',
+    description: 'Produce the Concierge actions for this onboarding step. ONLY send_message, set_waypoint, show_menu are allowed.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        actions: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              type: { type: Type.STRING, enum: ['send_message', 'set_waypoint', 'show_menu'] },
+              text: { type: Type.STRING, description: 'for send_message: ONE short line' },
+              label: { type: Type.STRING },
+              items: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, label: { type: Type.STRING } }, required: ['id', 'label'] } },
+            },
+            required: ['type'],
+          },
+        },
+      },
+      required: ['actions'],
+    },
+  };
+  const ctx = `Phase: ${phase}. Player language: ${language}. Player said: ${playerMessage || '(nothing yet)'}.\nAvailable jobs on this server: ${(hints && hints.jobs || []).join(', ') || 'unknown'}.` +
+    (hints && hints.destination ? `\nSuggested destination: ${hints.destination.location} — ${hints.destination.line}` : '');
+  const res = await ai.models.generateContent({
+    model: model(),
+    contents: [{ role: 'user', parts: [{ text: ctx }] }],
+    config: {
+      systemInstruction: system,
+      tools: [{ functionDeclarations: [decl] }],
+      toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: ['concierge_reply'] } },
+      temperature: 0.4,
+      maxOutputTokens: 300,
+    },
+  });
+  const call = (res.functionCalls || [])[0];
+  return (call && call.args) || { actions: [] };
+}
+
+module.exports = { name: 'gemini', interpret, ask, buildFunctionDeclaration, whitelistJudge, whitelistScore, conciergeReply };
